@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../courses/presentation/pages/courses_page.dart';
-import '../../../courses/presentation/pages/my_courses_page.dart';
-import '../../../faq/presentation/pages/faq_page.dart';
-import '../../../knowledge_center/presentation/pages/knowledge_center_page.dart';
-import '../../../admin/presentation/pages/admin_dashboard_page.dart';
+import 'package:next/core/theme/app_colors.dart';
+import 'package:next/features/courses/presentation/pages/courses_page.dart';
+import 'package:next/features/courses/presentation/pages/my_courses_page.dart';
+import 'package:next/features/faq/presentation/pages/faq_page.dart';
+import 'package:next/features/knowledge_center/presentation/pages/knowledge_center_page.dart';
+import 'package:next/features/admin/presentation/pages/admin_dashboard_page.dart';
 
 class AppMenu extends StatelessWidget {
   const AppMenu({super.key});
@@ -76,7 +76,7 @@ class AppMenu extends StatelessWidget {
                   children: [
                     _menuItem(
                       context,
-                      "Dashboard",
+                      "Admin",
                       onTap: () {
                         Navigator.push(
                           context,

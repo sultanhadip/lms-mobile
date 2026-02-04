@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../home/presentation/widgets/custom_app_bar.dart';
-import '../../../home/presentation/widgets/main_footer.dart';
+import 'package:next/core/theme/app_colors.dart';
+import 'package:next/core/widgets/custom_app_bar.dart';
+import 'package:next/core/widgets/main_footer.dart';
 import '../widgets/admin_sidebar.dart';
 
 class ContentBankPage extends StatefulWidget {
@@ -62,7 +62,7 @@ class _ContentBankPageState extends State<ContentBankPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 100),
+                const SizedBox(height: 140),
 
                 // Header
                 Padding(

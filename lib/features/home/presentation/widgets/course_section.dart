@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import 'course_card.dart';
+import 'package:next/core/theme/app_colors.dart';
+import 'package:next/core/theme/app_text_styles.dart';
+import 'package:next/core/widgets/course_card.dart';
 
 class CourseSection extends StatelessWidget {
   final String title;

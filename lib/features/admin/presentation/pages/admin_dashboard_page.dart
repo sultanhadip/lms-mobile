@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../home/presentation/widgets/custom_app_bar.dart';
-import '../../../home/presentation/widgets/main_footer.dart';
-import '../widgets/admin_sidebar.dart';
+import 'package:next/core/widgets/custom_app_bar.dart';
+import 'package:next/core/widgets/main_footer.dart';
+import 'package:next/features/admin/presentation/widgets/admin_sidebar.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -40,7 +40,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 100),
+                const SizedBox(height: 140),
 
                 // Header with Side Menu Trigger
                 Padding(

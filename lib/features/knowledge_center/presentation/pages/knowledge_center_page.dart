@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../home/presentation/widgets/custom_app_bar.dart';
-import '../../../home/presentation/widgets/main_footer.dart';
-import '../../../home/presentation/widgets/app_menu.dart';
+import 'package:next/core/theme/app_colors.dart';
+import 'package:next/core/widgets/custom_app_bar.dart';
+import 'package:next/core/widgets/main_footer.dart';
+import 'package:next/core/widgets/app_menu.dart';
+import 'knowledge_detail_page.dart';
 
 class KnowledgeCenterPage extends StatefulWidget {
   const KnowledgeCenterPage({super.key});
@@ -94,7 +95,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 100), // Space for sticky app bar
+                const SizedBox(height: 140), // Space for sticky app bar
                 // IMAGE 1: Header Section
                 _buildHeaderSection(),
 
@@ -755,168 +756,176 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
   }
 
   Widget _buildKnowledgeCard(Map<String, dynamic> item) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => KnowledgeDetailPage(item: item),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image placeholder with tags
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image placeholder with tags
+            Container(
+              height: 200,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+              ),
+              child: Stack(
+                children: [
+                  const Center(
+                    child: Icon(
+                      Icons.image_outlined,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.psychology_outlined,
+                            size: 14,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            item['type'],
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        item['category'],
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Stack(
-              children: [
-                const Center(
-                  child: Icon(
-                    Icons.image_outlined,
-                    size: 48,
-                    color: Colors.grey,
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.psychology_outlined,
-                          size: 14,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          item['type'],
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item['title'],
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                      height: 1.4,
                     ),
                   ),
-                ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      item['category'],
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  const SizedBox(height: 12),
+                  Text(
+                    item['snippet'],
+                    style: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 12,
+                      height: 1.6,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item['title'],
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  item['snippet'],
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 12,
-                    height: 1.6,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.visibility_outlined,
-                          size: 14,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          item['views'].toString(),
-                          style: const TextStyle(
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.visibility_outlined,
+                            size: 14,
                             color: Colors.grey,
-                            fontSize: 11,
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Icon(
-                          Icons.thumb_up_outlined,
-                          size: 14,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          item['likes'].toString(),
-                          style: const TextStyle(
+                          const SizedBox(width: 4),
+                          Text(
+                            item['views'].toString(),
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Icon(
+                            Icons.thumb_up_outlined,
+                            size: 14,
                             color: Colors.grey,
-                            fontSize: 11,
                           ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      item['source'],
-                      style: const TextStyle(
-                        color: Colors.orange,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                          const SizedBox(width: 4),
+                          Text(
+                            item['likes'].toString(),
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      Text(
+                        item['source'],
+                        style: const TextStyle(
+                          color: Colors.orange,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -988,7 +997,11 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: const [
-              Icon(Icons.calendar_today_outlined, size: 14, color: Colors.orange),
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 14,
+                color: Colors.orange,
+              ),
               SizedBox(width: 8),
               Text(
                 "Acara Mendatang",
@@ -1059,7 +1072,11 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
               const Text(
                 "Saat ini tidak ada webinar yang dijadwalkan. Pantau terus halaman ini untuk update webinar mendatang.",
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.5),
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 13,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 32),
               Container(
@@ -1165,33 +1182,47 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
                       height: 150,
                       decoration: BoxDecoration(
                         color: Colors.grey[100],
-                        borderRadius:
-                            const BorderRadius.vertical(top: Radius.circular(16)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(16),
+                        ),
                       ),
                       child: Stack(
                         children: [
                           const Center(
-                              child: Icon(Icons.computer,
-                                  size: 40, color: Colors.grey)),
+                            child: Icon(
+                              Icons.computer,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
+                          ),
                           Positioned(
                             top: 10,
                             left: 10,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                  color: const Color(0xFFF3E8FF),
-                                  borderRadius: BorderRadius.circular(6)),
+                                color: const Color(0xFFF3E8FF),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
                               child: Row(
                                 children: const [
-                                  Icon(Icons.videocam_outlined,
-                                      size: 14, color: Color(0xFFA855F7)),
+                                  Icon(
+                                    Icons.videocam_outlined,
+                                    size: 14,
+                                    color: Color(0xFFA855F7),
+                                  ),
                                   SizedBox(width: 4),
-                                  Text("Webinar",
-                                      style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFFA855F7))),
+                                  Text(
+                                    "Webinar",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFA855F7),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -1201,14 +1232,20 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
                             right: 10,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(6)),
-                              child: const Text("Data Sains",
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold)),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                "Data Sains",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -1222,9 +1259,10 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
                           const Text(
                             "Webinar Dasar-dasar Data Sains",
                             style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E293B)),
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1232,16 +1270,19 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
                           const Text(
                             "Webinar Dasar-dasar Data Sains diselenggarakan untuk memberikan pemahaman awal mengenai konsep...",
                             style: TextStyle(
-                                color: Color(0xFF64748B),
-                                fontSize: 11,
-                                height: 1.5),
+                              color: Color(0xFF64748B),
+                              fontSize: 11,
+                              height: 1.5,
+                            ),
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 16),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFF7ED),
                               borderRadius: BorderRadius.circular(8),
@@ -1249,14 +1290,20 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: const [
-                                Icon(Icons.calendar_today_outlined,
-                                    size: 12, color: Colors.orange),
+                                Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 12,
+                                  color: Colors.orange,
+                                ),
                                 SizedBox(width: 6),
-                                Text("Selesai",
-                                    style: TextStyle(
-                                        color: Colors.orange,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold)),
+                                Text(
+                                  "Selesai",
+                                  style: TextStyle(
+                                    color: Colors.orange,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -1266,24 +1313,42 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
                             children: [
                               Row(
                                 children: const [
-                                  Icon(Icons.visibility_outlined,
-                                      size: 14, color: Colors.grey),
+                                  Icon(
+                                    Icons.visibility_outlined,
+                                    size: 14,
+                                    color: Colors.grey,
+                                  ),
                                   SizedBox(width: 4),
-                                  Text("5",
-                                      style: TextStyle(
-                                          color: Colors.grey, fontSize: 11)),
+                                  Text(
+                                    "5",
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 11,
+                                    ),
+                                  ),
                                   SizedBox(width: 12),
-                                  Icon(Icons.thumb_up_outlined,
-                                      size: 14, color: Colors.grey),
+                                  Icon(
+                                    Icons.thumb_up_outlined,
+                                    size: 14,
+                                    color: Colors.grey,
+                                  ),
                                   SizedBox(width: 4),
-                                  Text("0",
-                                      style: TextStyle(
-                                          color: Colors.grey, fontSize: 11)),
+                                  Text(
+                                    "0",
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 11,
+                                    ),
+                                  ),
                                 ],
                               ),
-                              const Text("Pusat Pendidikan dan Pelatihan",
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 8)),
+                              const Text(
+                                "Pusat Pendidikan dan Pelatihan",
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 8,
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -1299,4 +1364,3 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
     );
   }
 }
-

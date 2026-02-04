@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../home/presentation/widgets/custom_app_bar.dart';
-import '../../../home/presentation/widgets/main_footer.dart';
-import '../../../home/presentation/widgets/app_menu.dart';
+import 'package:next/core/theme/app_colors.dart';
+import 'package:next/core/theme/app_text_styles.dart';
+import 'package:next/core/widgets/custom_app_bar.dart';
+import 'package:next/core/widgets/main_footer.dart';
+import 'package:next/core/widgets/app_menu.dart';
 
 class FaqPage extends StatefulWidget {
   const FaqPage({super.key});
@@ -91,7 +91,7 @@ class _FaqPageState extends State<FaqPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 100), // Space for sticky app bar
+                const SizedBox(height: 140), // Space for sticky app bar
                 // SECTION 1: Header & Search
                 Padding(
                   padding: const EdgeInsets.symmetric(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_text_styles.dart';
+import 'package:next/core/theme/app_text_styles.dart';
 
 class HeroSection extends StatelessWidget {
   const HeroSection({super.key});

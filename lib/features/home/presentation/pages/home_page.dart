@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../widgets/custom_app_bar.dart';
+import 'package:next/core/theme/app_colors.dart';
+import 'package:next/core/theme/app_text_styles.dart';
+import 'package:next/core/widgets/custom_app_bar.dart';
+import 'package:next/core/widgets/main_footer.dart';
+import 'package:next/core/widgets/app_menu.dart';
 import '../widgets/home_header_section.dart';
 import '../widgets/course_section.dart';
 import '../widgets/testimonial_card.dart';
-import '../widgets/main_footer.dart';
-import '../widgets/app_menu.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

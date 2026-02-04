@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_text_styles.dart';
+import 'package:next/core/theme/app_text_styles.dart';
 
 class CategoryFilter extends StatelessWidget {
   const CategoryFilter({super.key});

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../home/presentation/widgets/custom_app_bar.dart';
-import '../../../home/presentation/widgets/main_footer.dart';
-import '../../../home/presentation/widgets/app_menu.dart';
-import '../../../home/presentation/widgets/course_card.dart';
+import 'package:next/core/theme/app_colors.dart';
+import 'package:next/core/theme/app_text_styles.dart';
+import 'package:next/core/widgets/custom_app_bar.dart';
+import 'package:next/core/widgets/main_footer.dart';
+import 'package:next/core/widgets/app_menu.dart';
+import 'package:next/core/widgets/course_card.dart';
 
 class MyCoursesPage extends StatefulWidget {
   const MyCoursesPage({super.key});
@@ -83,7 +83,7 @@ class _MyCoursesPageState extends State<MyCoursesPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 100), // Space for sticky app bar
+                const SizedBox(height: 140), // Space for sticky app bar
                 // Header Content
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),

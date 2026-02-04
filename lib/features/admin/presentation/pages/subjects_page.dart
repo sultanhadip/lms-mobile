@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../home/presentation/widgets/custom_app_bar.dart';
-import '../../../home/presentation/widgets/main_footer.dart';
+import 'package:next/core/theme/app_colors.dart';
+import 'package:next/core/widgets/custom_app_bar.dart';
+import 'package:next/core/widgets/main_footer.dart';
 import '../widgets/admin_sidebar.dart';
 
 class SubjectsPage extends StatefulWidget {
@@ -17,14 +17,26 @@ class _SubjectsPageState extends State<SubjectsPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final List<Map<String, dynamic>> _subjects = [
-    {"name": "werwer", "icon": Icons.public_outlined},
-    {"name": "Komputer", "icon": Icons.computer_outlined},
-    {"name": "Akuntansi", "icon": Icons.description_outlined},
-    {"name": "Data Sains", "icon": Icons.science_outlined},
-    {"name": "Pertanian", "icon": Icons.agriculture_outlined},
-    {"name": "Kependudukan", "icon": Icons.people_outline},
-    {"name": "Sistem Informasi", "icon": Icons.code_rounded},
-    {"name": "Ekonomi", "icon": Icons.monetization_on_outlined},
+    {"name": "General", "icon": Icons.public_outlined, "status": "Aktif"},
+    {"name": "Komputer", "icon": Icons.computer_outlined, "status": "Aktif"},
+    {
+      "name": "Akuntansi",
+      "icon": Icons.description_outlined,
+      "status": "Aktif",
+    },
+    {"name": "Data Sains", "icon": Icons.science_outlined, "status": "Aktif"},
+    {
+      "name": "Pertanian",
+      "icon": Icons.agriculture_outlined,
+      "status": "Aktif",
+    },
+    {"name": "Kependudukan", "icon": Icons.people_outline, "status": "Aktif"},
+    {"name": "Sistem Informasi", "icon": Icons.code_rounded, "status": "Aktif"},
+    {
+      "name": "Ekonomi",
+      "icon": Icons.monetization_on_outlined,
+      "status": "Non-Aktif",
+    },
   ];
 
   @override
@@ -52,7 +64,7 @@ class _SubjectsPageState extends State<SubjectsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 100),
+                const SizedBox(height: 140),
 
                 // Header
                 Padding(
@@ -259,13 +271,41 @@ class _SubjectsPageState extends State<SubjectsPage> {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              subject['name'] as String,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  subject['name'] as String,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: subject['status'] == "Aktif"
+                        ? const Color(0xFFF0FDF4)
+                        : const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    subject['status'],
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: subject['status'] == "Aktif"
+                          ? const Color(0xFF16A34A)
+                          : const Color(0xFFDC2626),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           GestureDetector(
@@ -281,6 +321,25 @@ class _SubjectsPageState extends State<SubjectsPage> {
                 Icons.mode_edit_outline_outlined,
                 size: 18,
                 color: Color(0xFFF97316),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () {
+              // Delete logic
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: const Icon(
+                Icons.delete_outline_rounded,
+                size: 18,
+                color: Color(0xFFEF4444),
               ),
             ),
           ),
