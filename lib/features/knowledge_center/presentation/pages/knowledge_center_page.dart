@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:next/core/theme/app_colors.dart';
-import 'package:next/core/widgets/custom_app_bar.dart';
-import 'package:next/core/widgets/main_footer.dart';
 import 'package:next/core/widgets/app_menu.dart';
-import 'knowledge_detail_page.dart';
+import 'package:next/core/widgets/custom_app_bar.dart';
+import 'package:next/core/widgets/knowledge_card.dart';
+import 'package:next/core/widgets/main_footer.dart';
+import 'package:next/features/knowledge_center/presentation/pages/knowledge_detail_page.dart';
 
 class KnowledgeCenterPage extends StatefulWidget {
   const KnowledgeCenterPage({super.key});
@@ -17,6 +18,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
   bool _isScrolled = false;
   String _activeTab = "Semua";
   bool _showAllSubjects = false;
+  String _selectedSort = "Terbaru";
 
   final List<String> _tabs = ["Semua", "Webinars", "Konten"];
   final List<Map<String, dynamic>> _subjects = [
@@ -32,25 +34,13 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
 
   final List<Map<String, dynamic>> _knowledgeItems = [
     {
-      "title":
-          "Mengenal Ilmu Ekonomi: Konsep Dasar, Ruang Lingkup, dan Penerapannya",
+      "title": "Webinar Dasar-dasar Akuntansi",
       "snippet":
-          "Artikel ini bertujuan memberikan pemahaman dasar mengenai ilmu ekonomi, mulai dari konsep utama, ruang lingkup kajiannya, hingga...",
-      "type": "Artikel",
-      "category": "Ekonomi",
-      "views": 13,
+          "Webinar Dasar-dasar Akuntansi diselenggarakan untuk memberikan pemahaman awal mengenai prinsip, konsep, dan fungsi akuntansi...",
+      "type": "Webinar",
+      "category": "Akuntansi",
+      "views": 6,
       "likes": 1,
-      "source": "Pusat Pendidikan dan Pelatihan",
-    },
-    // Adding more for pagination demo
-    {
-      "title": "Statistik Sektoral untuk Pembangunan Daerah",
-      "snippet":
-          "Panduan implementasi statistik sektoral di tingkat daerah sesuai dengan standar Satu Data Indonesia...",
-      "type": "Video",
-      "category": "Statistik",
-      "views": 45,
-      "likes": 12,
       "source": "Pusat Pendidikan dan Pelatihan",
     },
     {
@@ -61,6 +51,16 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
       "category": "Data Sains",
       "views": 89,
       "likes": 34,
+      "source": "Pusat Pendidikan dan Pelatihan",
+    },
+    {
+      "title": "Statistik Sektoral untuk Pembangunan Daerah",
+      "snippet":
+          "Panduan implementasi statistik sektoral di tingkat daerah sesuai dengan standar Satu Data Indonesia...",
+      "type": "Video",
+      "category": "Statistik",
+      "views": 45,
+      "likes": 12,
       "source": "Pusat Pendidikan dan Pelatihan",
     },
   ];
@@ -95,32 +95,16 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 140), // Space for sticky app bar
-                // IMAGE 1: Header Section
+                const SizedBox(height: 140),
                 _buildHeaderSection(),
-
-                // IMAGE 2: Stats Cards
                 _buildStatsGrid(),
-
-                // IMAGE 3: Subject Browser
                 _buildSubjectBrowser(),
-
-                // IMAGE 4: Content List
                 _buildContentList(),
-
-                // IMAGE 5: Pagination
                 _buildPaginationFooter(),
-
                 const SizedBox(height: 40),
-
-                // NEW: Upcoming Webinars (Empty State)
                 _buildUpcomingWebinars(),
-
                 const SizedBox(height: 40),
-
-                // NEW: Trending Knowledge (Horizontal Scroll)
                 _buildTrendingKnowledge(),
-
                 const SizedBox(height: 60),
                 const MainFooter(),
               ],
@@ -225,7 +209,6 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
             ],
           ),
           const SizedBox(height: 32),
-          // Search Bar with Button
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -267,7 +250,6 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
             ),
           ),
           const SizedBox(height: 32),
-          // Tabs
           Row(
             children: _tabs.map((tab) {
               final isActive = tab == _activeTab;
@@ -410,7 +392,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
             label: "Total Dilihat",
             icon: Icons.visibility_outlined,
             bgColor: const Color(0xFFFDF4FF),
-            indicatorColor: const Color(0xFFA855F7),
+            indicatorColor: const Color(0xFF10B981),
           ),
           _buildStatVerticalCard(
             count: "5",
@@ -443,7 +425,6 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Background circle pattern
           Positioned(
             right: -20,
             top: -20,
@@ -470,13 +451,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
                         : (indicatorColor ?? bgColor),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(
-                    icon,
-                    color: isFullColor
-                        ? Colors.white
-                        : (isFullColor ? Colors.transparent : Colors.white),
-                    size: 28,
-                  ),
+                  child: Icon(icon, color: Colors.white, size: 28),
                 ),
                 const SizedBox(width: 20),
                 Column(
@@ -688,7 +663,6 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
             style: TextStyle(color: Colors.grey, fontSize: 12),
           ),
           const SizedBox(height: 20),
-          // Sub-search and Sort
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
@@ -713,218 +687,82 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              const Text(
-                "Urutkan:",
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: const Row(
-                  children: [
-                    Text(
-                      "Terbaru",
-                      style: TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
-                    ),
-                    SizedBox(width: 8),
-                    Icon(
-                      Icons.keyboard_arrow_down,
-                      size: 16,
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          _buildRealDropdown(
+            value: _selectedSort,
+            items: ["Terbaru", "Paling Disukai", "Terpopuler"],
+            onChanged: (val) {
+              setState(() => _selectedSort = val!);
+            },
           ),
           const SizedBox(height: 24),
-          // Content Cards
-          ..._knowledgeItems.map((item) => _buildKnowledgeCard(item)),
+          ..._knowledgeItems.map(
+            (item) => KnowledgeCard(
+              item: item,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => KnowledgeDetailPage(item: item),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildKnowledgeCard(Map<String, dynamic> item) {
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => KnowledgeDetailPage(item: item),
-        ),
+  Widget _buildRealDropdown({
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image placeholder with tags
-            Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B)),
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          items: items.map((String item) {
+            final isSelected = item == value;
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      item,
+                      style: TextStyle(
+                        color: isSelected
+                            ? const Color(0xFF1E293B)
+                            : const Color(0xFF64748B),
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (isSelected)
+                      const Icon(
+                        Icons.check,
+                        color: Color(0xFF22C55E),
+                        size: 18,
+                      ),
+                  ],
                 ),
               ),
-              child: Stack(
-                children: [
-                  const Center(
-                    child: Icon(
-                      Icons.image_outlined,
-                      size: 48,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.psychology_outlined,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            item['type'],
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        item['category'],
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item['title'],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    item['snippet'],
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 12,
-                      height: 1.6,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.visibility_outlined,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            item['views'].toString(),
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 11,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Icon(
-                            Icons.thumb_up_outlined,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            item['likes'].toString(),
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        item['source'],
-                        style: const TextStyle(
-                          color: Colors.orange,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+            );
+          }).toList(),
+          onChanged: onChanged,
         ),
       ),
     );
@@ -1039,11 +877,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.grey[300]!,
-              style: BorderStyle.solid,
-              width: 1,
-            ),
+            border: Border.all(color: Colors.grey[300]!),
           ),
           child: Column(
             children: [
@@ -1158,204 +992,12 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             scrollDirection: Axis.horizontal,
-            itemCount: 5,
+            itemCount: _knowledgeItems.length,
             separatorBuilder: (_, __) => const SizedBox(width: 16),
             itemBuilder: (context, index) {
-              return Container(
+              return SizedBox(
                 width: 280,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Half height image
-                    Container(
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16),
-                        ),
-                      ),
-                      child: Stack(
-                        children: [
-                          const Center(
-                            child: Icon(
-                              Icons.computer,
-                              size: 40,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          Positioned(
-                            top: 10,
-                            left: 10,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF3E8FF),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                children: const [
-                                  Icon(
-                                    Icons.videocam_outlined,
-                                    size: 14,
-                                    color: Color(0xFFA855F7),
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "Webinar",
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFFA855F7),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Text(
-                                "Data Sains",
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Webinar Dasar-dasar Data Sains",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E293B),
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            "Webinar Dasar-dasar Data Sains diselenggarakan untuk memberikan pemahaman awal mengenai konsep...",
-                            style: TextStyle(
-                              color: Color(0xFF64748B),
-                              fontSize: 11,
-                              height: 1.5,
-                            ),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFF7ED),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(
-                                  Icons.calendar_today_outlined,
-                                  size: 12,
-                                  color: Colors.orange,
-                                ),
-                                SizedBox(width: 6),
-                                Text(
-                                  "Selesai",
-                                  style: TextStyle(
-                                    color: Colors.orange,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: const [
-                                  Icon(
-                                    Icons.visibility_outlined,
-                                    size: 14,
-                                    color: Colors.grey,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "5",
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Icon(
-                                    Icons.thumb_up_outlined,
-                                    size: 14,
-                                    color: Colors.grey,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "0",
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Text(
-                                "Pusat Pendidikan dan Pelatihan",
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 8,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                child: KnowledgeCard(item: _knowledgeItems[index]),
               );
             },
           ),

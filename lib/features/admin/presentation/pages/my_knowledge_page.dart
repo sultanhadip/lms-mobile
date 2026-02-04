@@ -14,6 +14,7 @@ class MyKnowledgePage extends StatefulWidget {
 class _MyKnowledgePageState extends State<MyKnowledgePage> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  bool _showAdvancedFilters = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -119,6 +120,7 @@ class _MyKnowledgePageState extends State<MyKnowledgePage> {
                           _buildViewToggle(),
                         ],
                       ),
+                      _buildAdvancedFilters(),
                     ],
                   ),
                 ),
@@ -207,14 +209,21 @@ class _MyKnowledgePageState extends State<MyKnowledgePage> {
   }
 
   Widget _buildFilterIconButton() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFF97316)),
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _showAdvancedFilters = !_showAdvancedFilters;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: _showAdvancedFilters ? const Color(0xFFFFF7ED) : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFF97316)),
+        ),
+        child: const Icon(Icons.tune, color: Color(0xFFF97316), size: 18),
       ),
-      child: const Icon(Icons.tune, color: Color(0xFFF97316), size: 18),
     );
   }
 
@@ -250,6 +259,115 @@ class _MyKnowledgePageState extends State<MyKnowledgePage> {
           Icon(Icons.format_list_bulleted, size: 18, color: Color(0xFF94A3B8)),
         ],
       ),
+    );
+  }
+
+  Widget _buildAdvancedFilters() {
+    if (!_showAdvancedFilters) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF97316)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.tune, color: Color(0xFFF97316), size: 18),
+              const SizedBox(width: 8),
+              const Text(
+                "Filter Lanjutan",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showAdvancedFilters = false;
+                  });
+                },
+                child: const Text(
+                  "Hapus Semua",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFF97316),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showAdvancedFilters = false;
+                  });
+                },
+                child: const Icon(
+                  Icons.close,
+                  size: 18,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+          _buildFilterDropdown("Tipe Konten", "Semua Tipe"),
+          const SizedBox(height: 12),
+          _buildFilterDropdown("Status", "Semua Status"),
+          const SizedBox(height: 12),
+          _buildFilterDropdown("Kategori Subjek", "Semua Subjek"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterDropdown(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B)),
+              ),
+              const Icon(
+                Icons.keyboard_arrow_down,
+                color: Color(0xFF64748B),
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

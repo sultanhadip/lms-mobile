@@ -4,7 +4,7 @@ import 'package:next/core/theme/app_text_styles.dart';
 import 'package:next/core/widgets/custom_app_bar.dart';
 import 'package:next/core/widgets/main_footer.dart';
 import 'package:next/core/widgets/app_menu.dart';
-import 'package:next/core/widgets/course_card.dart';
+import 'package:next/core/widgets/my_course_card.dart';
 
 class MyCoursesPage extends StatefulWidget {
   const MyCoursesPage({super.key});
@@ -17,33 +17,36 @@ class _MyCoursesPageState extends State<MyCoursesPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
 
-  // Dummy my courses data (subset of all courses)
-  final List<Map<String, String>> _myCourses = [
+  // Dummy my courses data with progress
+  final List<Map<String, dynamic>> _myCourses = [
     {
       "title": "Pelatihan Innas Sensus Ekonomi 2026 Kelas C",
       "category": "Pelatihan Subject Matter Survey Sensus",
       "image": "",
-      "instructor": "Budi Santoso",
-      "students": "120",
+      "progress": 0.35,
+      "rating": 0.0,
     },
     {
       "title": "Analisis Data Statistik Dasar",
       "category": "Statistik",
       "image": "",
-      "instructor": "Ahmad Wijaya",
-      "students": "250",
+      "progress": 0.70,
+      "rating": 0.0,
     },
     {
       "title": "Basic Python for Data Analyst",
       "category": "Data Science",
       "image": "",
-      "instructor": "Andi Setiawan",
-      "students": "310",
+      "progress": 1.0,
+      "rating": 0.0,
     },
   ];
 
   int _currentPage = 1;
   static const int _itemsPerPage = 5;
+
+  String _selectedStatus = "All Status";
+  String _selectedSort = "Urutkan";
 
   @override
   void initState() {
@@ -83,8 +86,7 @@ class _MyCoursesPageState extends State<MyCoursesPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 140), // Space for sticky app bar
-                // Header Content
+                const SizedBox(height: 140),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
@@ -103,19 +105,21 @@ class _MyCoursesPageState extends State<MyCoursesPage> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: const Row(
                           children: [
-                            Icon(Icons.search, color: Colors.grey),
+                            Icon(Icons.search, color: Color(0xFF94A3B8)),
                             SizedBox(width: 8),
                             Expanded(
                               child: TextField(
                                 decoration: InputDecoration(
                                   hintText: "Cari kursus saya...",
                                   border: InputBorder.none,
-                                  hintStyle: TextStyle(color: Colors.grey),
+                                  hintStyle: TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                  ),
                                 ),
                               ),
                             ),
@@ -124,12 +128,24 @@ class _MyCoursesPageState extends State<MyCoursesPage> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Category Filter
-                      _buildDropdown("Semua Kategori"),
+                      // Status Dropdown
+                      _buildRealDropdown(
+                        value: _selectedStatus,
+                        items: ["All Status", "Belum Selesai", "Sudah Selesai"],
+                        onChanged: (val) {
+                          setState(() => _selectedStatus = val!);
+                        },
+                      ),
                       const SizedBox(height: 12),
 
-                      // Sort Filter
-                      _buildDropdown("Urutkan"),
+                      // Sort Dropdown
+                      _buildRealDropdown(
+                        value: _selectedSort,
+                        items: ["Urutkan", "Judul (A-Z)", "Judul (Z-A)"],
+                        onChanged: (val) {
+                          setState(() => _selectedSort = val!);
+                        },
+                      ),
                       const SizedBox(height: 32),
 
                       // Course List
@@ -145,20 +161,18 @@ class _MyCoursesPageState extends State<MyCoursesPage> {
                         )
                       else
                         ...currentCourses.map(
-                          (course) => CourseCard(
+                          (course) => MyCourseCard(
                             title: course['title']!,
                             category: course['category']!,
                             imageUrl: course['image']!,
-                            instructor: course['instructor'] ?? "-",
-                            studentCount:
-                                int.tryParse(course['students'] ?? "0") ?? 0,
-                            width: double.infinity,
+                            progress: course['progress'] ?? 0.0,
+                            rating: course['rating'] ?? 0.0,
                           ),
                         ),
 
                       const SizedBox(height: 24),
 
-                      // Pagination Text (only show if items exist)
+                      // Pagination Text
                       if (_myCourses.isNotEmpty) ...[
                         Center(
                           child: Text(
@@ -170,8 +184,6 @@ class _MyCoursesPageState extends State<MyCoursesPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-
-                        // Pagination Buttons
                         _buildPagination(totalPages),
                       ],
 
@@ -179,7 +191,6 @@ class _MyCoursesPageState extends State<MyCoursesPage> {
                     ],
                   ),
                 ),
-
                 const MainFooter(),
               ],
             ),
@@ -210,20 +221,59 @@ class _MyCoursesPageState extends State<MyCoursesPage> {
     );
   }
 
-  Widget _buildDropdown(String label) {
+  Widget _buildRealDropdown({
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: AppColors.textBlack)),
-          const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-        ],
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B)),
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          items: items.map((String item) {
+            final isSelected = item == value;
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      item,
+                      style: TextStyle(
+                        color: isSelected
+                            ? const Color(0xFF1E293B)
+                            : const Color(0xFF64748B),
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (isSelected)
+                      const Icon(
+                        Icons.check,
+                        color: Color(0xFF22C55E),
+                        size: 18,
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: onChanged,
+        ),
       ),
     );
   }
@@ -237,9 +287,7 @@ class _MyCoursesPageState extends State<MyCoursesPage> {
         final isActive = page == _currentPage;
         return GestureDetector(
           onTap: () {
-            setState(() {
-              _currentPage = page;
-            });
+            setState(() => _currentPage = page);
             _scrollController.animateTo(
               0,
               duration: const Duration(milliseconds: 500),

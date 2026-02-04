@@ -80,6 +80,9 @@ class _CoursesPageState extends State<CoursesPage> {
   int _currentPage = 1;
   static const int _itemsPerPage = 5;
 
+  String _selectedCategory = "Semua Kategori";
+  String _selectedSort = "Urutkan";
+
   @override
   void initState() {
     super.initState();
@@ -118,8 +121,7 @@ class _CoursesPageState extends State<CoursesPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 140), // Space for sticky app bar
-                // Header Content
+                const SizedBox(height: 140),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
@@ -138,19 +140,21 @@ class _CoursesPageState extends State<CoursesPage> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: const Row(
                           children: [
-                            Icon(Icons.search, color: Colors.grey),
+                            Icon(Icons.search, color: Color(0xFF94A3B8)),
                             SizedBox(width: 8),
                             Expanded(
                               child: TextField(
                                 decoration: InputDecoration(
                                   hintText: "Cari kursus...",
                                   border: InputBorder.none,
-                                  hintStyle: TextStyle(color: Colors.grey),
+                                  hintStyle: TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                  ),
                                 ),
                               ),
                             ),
@@ -159,12 +163,31 @@ class _CoursesPageState extends State<CoursesPage> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Category Filter
-                      _buildDropdown("Semua Kategori"),
+                      // Category Dropdown
+                      _buildRealDropdown(
+                        value: _selectedCategory,
+                        items: [
+                          "Semua Kategori",
+                          "Sensus Ekonomi",
+                          "Statistik",
+                          "Data Science",
+                          "Big Data",
+                          "Leadership",
+                        ],
+                        onChanged: (val) {
+                          setState(() => _selectedCategory = val!);
+                        },
+                      ),
                       const SizedBox(height: 12),
 
-                      // Sort Filter
-                      _buildDropdown("Urutkan"),
+                      // Sort Dropdown
+                      _buildRealDropdown(
+                        value: _selectedSort,
+                        items: ["Urutkan", "Judul (A-Z)", "Judul (Z-A)"],
+                        onChanged: (val) {
+                          setState(() => _selectedSort = val!);
+                        },
+                      ),
                       const SizedBox(height: 32),
 
                       // Course List
@@ -232,25 +255,65 @@ class _CoursesPageState extends State<CoursesPage> {
     );
   }
 
-  Widget _buildDropdown(String label) {
+  Widget _buildRealDropdown({
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: AppColors.textBlack)),
-          const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-        ],
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B)),
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          items: items.map((String item) {
+            final isSelected = item == value;
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      item,
+                      style: TextStyle(
+                        color: isSelected
+                            ? const Color(0xFF1E293B)
+                            : const Color(0xFF64748B),
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (isSelected)
+                      const Icon(
+                        Icons.check,
+                        color: Color(0xFF22C55E),
+                        size: 18,
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: onChanged,
+        ),
       ),
     );
   }
 
   Widget _buildPagination(int totalPages) {
+    if (totalPages <= 1) return const SizedBox.shrink();
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(totalPages, (index) {

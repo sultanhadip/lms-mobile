@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:next/core/theme/app_colors.dart';
-import 'package:next/core/theme/app_text_styles.dart';
 import 'package:next/features/courses/presentation/pages/course_detail_page.dart';
 
 class CourseCard extends StatelessWidget {
   final String title;
   final String category;
-  final String
-  imageUrl; // For now we will use colors/icons as placeholder logic
+  final String imageUrl;
   final double rating;
-
   final int studentCount;
   final String instructor;
   final double? width;
@@ -46,13 +43,13 @@ class CourseCard extends StatelessWidget {
       },
       child: Container(
         width: width ?? 280,
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: const EdgeInsets.only(bottom: 24),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -61,41 +58,45 @@ class CourseCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image / Banner
-            Container(
-              height: 160,
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
+            // Banner Image
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
               ),
-              padding: const EdgeInsets.all(16),
-              child: Stack(
-                children: [
-                  Center(
+              child: Image.network(
+                imageUrl.isNotEmpty
+                    ? imageUrl
+                    : "https://pusdiklat.bps.go.id/media/images/webinar/banner_webinar_1684742400.jpg",
+                height: 200,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  height: 200,
+                  color: const Color(0xFFF1F5F9),
+                  child: Center(
                     child: Icon(
                       Icons.school_outlined,
                       size: 64,
                       color: AppColors.primaryOrange.withOpacity(0.5),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-            // Content
+
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Category Badge
                   if (category.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
-                        vertical: 4,
+                        vertical: 6,
                       ),
-                      margin: const EdgeInsets.only(bottom: 12),
+                      margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(20),
@@ -104,70 +105,83 @@ class CourseCard extends StatelessWidget {
                         category,
                         style: const TextStyle(
                           fontSize: 10,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           color: Color(0xFF64748B),
                         ),
                       ),
                     ),
+
+                  // Title
                   Text(
                     title,
-                    style: AppTextStyles.cardTitle.copyWith(fontSize: 15),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1E293B),
+                      height: 1.3,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+
+                  // Rating Section
                   Row(
                     children: [
                       ...List.generate(
                         5,
-                        (index) => Icon(
+                        (index) => const Icon(
                           Icons.star_border,
-                          size: 16,
-                          color: Colors.grey[300],
+                          size: 18,
+                          color: Color(0xFFE2E8F0),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        "($rating)",
+                        "(${rating.toInt()})",
                         style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 13,
+                          color: Color(0xFF64748B),
+                          fontSize: 14,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+
+                  // Instructor
                   Row(
                     children: [
                       const Icon(
                         Icons.school_outlined,
-                        size: 16,
-                        color: Colors.grey,
+                        size: 20,
+                        color: Color(0xFF64748B),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Text(
                         instructor,
                         style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 13,
+                          color: Color(0xFF64748B),
+                          fontSize: 14,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
+
+                  // Student Count
                   Row(
                     children: [
                       const Icon(
                         Icons.people_outline,
-                        size: 16,
-                        color: Colors.grey,
+                        size: 20,
+                        color: Color(0xFF64748B),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Text(
                         "$studentCount students",
                         style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 13,
+                          color: Color(0xFF64748B),
+                          fontSize: 14,
                         ),
                       ),
                     ],

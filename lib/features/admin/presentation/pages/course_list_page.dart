@@ -33,6 +33,8 @@ class _CourseListPageState extends State<CourseListPage> {
     },
   );
 
+  String _selectedSort = "Urutkan";
+
   @override
   void initState() {
     super.initState();
@@ -136,7 +138,7 @@ class _CourseListPageState extends State<CourseListPage> {
                       const SizedBox(height: 12),
                       _buildFilterDropdown("Semua Kategori"),
                       const SizedBox(height: 12),
-                      _buildFilterDropdown("Urutkan"),
+                      _buildRealSortDropdown(),
                     ],
                   ),
                 ),
@@ -239,6 +241,80 @@ class _CourseListPageState extends State<CourseListPage> {
     );
   }
 
+  Widget _buildRealSortDropdown() {
+    final List<String> sortOptions = [
+      "Urutkan",
+      "Popularitas",
+      "Rating Tertinggi",
+      "Terbaru",
+      "Terlama",
+      "Judul (A-Z)",
+      "Judul (Z-A)",
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedSort,
+          isExpanded: true,
+          icon: const Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            child: Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B)),
+          ),
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          items: sortOptions.map((String item) {
+            final isSelected = item == _selectedSort;
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                color: isSelected
+                    ? const Color(0xFFF0FDF4)
+                    : Colors.transparent,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      item,
+                      style: TextStyle(
+                        color: isSelected
+                            ? const Color(0xFF22C55E)
+                            : const Color(0xFF64748B),
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (isSelected)
+                      const Icon(
+                        Icons.check,
+                        color: Color(0xFF22C55E),
+                        size: 18,
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: (val) {
+            if (val != null) setState(() => _selectedSort = val);
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildCourseCard(Map<String, dynamic> course) {
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
@@ -248,7 +324,7 @@ class _CourseListPageState extends State<CourseListPage> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
+            blurRadius: 15,
             offset: const Offset(0, 4),
           ),
         ],
@@ -266,94 +342,92 @@ class _CourseListPageState extends State<CourseListPage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        course['category'],
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    course['category'],
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748B),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryOrange,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        "Aktif",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Text(
                   course['title'],
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                    color: Color(0xFF0F172A),
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Divider(),
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
                 const SizedBox(height: 16),
                 Row(
-                  children: [
-                    const Icon(
-                      Icons.layers_outlined,
-                      size: 16,
+                  children: const [
+                    Icon(
+                      Icons.school_outlined,
+                      size: 18,
                       color: Color(0xFF64748B),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 10),
                     Text(
-                      "${course['sectionCount']} Section",
-                      style: const TextStyle(
+                      "Unknown Teacher",
+                      style: TextStyle(
                         fontSize: 13,
                         color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_today_outlined,
-                      size: 16,
+                  children: const [
+                    Icon(
+                      Icons.people_outline,
+                      size: 18,
                       color: Color(0xFF64748B),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 10),
                     Text(
-                      course['date'],
-                      style: const TextStyle(
+                      "2 Students",
+                      style: TextStyle(
                         fontSize: 13,
                         color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: const [
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 18,
+                      color: Color(0xFF22C55E),
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      "Final",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF22C55E),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],

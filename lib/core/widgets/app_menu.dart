@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:next/core/theme/app_colors.dart';
 import 'package:next/features/courses/presentation/pages/courses_page.dart';
 import 'package:next/features/courses/presentation/pages/my_courses_page.dart';
 import 'package:next/features/faq/presentation/pages/faq_page.dart';
 import 'package:next/features/knowledge_center/presentation/pages/knowledge_center_page.dart';
 import 'package:next/features/admin/presentation/pages/admin_dashboard_page.dart';
+import 'package:next/features/auth/presentation/pages/login_page.dart';
+import 'package:next/features/dashboard/presentation/pages/user_dashboard_page.dart';
 
 class AppMenu extends StatelessWidget {
   const AppMenu({super.key});
@@ -135,6 +136,30 @@ class AppMenu extends StatelessWidget {
                       },
                     ),
                     _menuItem(context, "Ai Probing"),
+                    _menuItem(
+                      context,
+                      "Dashboard",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const UserDashboardPage(),
+                          ),
+                        );
+                      },
+                    ),
+                    _menuItem(
+                      context,
+                      "Login",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginPage(),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -165,37 +190,93 @@ class AppMenu extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
+                      PopupMenuButton<String>(
+                        offset: const Offset(0, 40),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          children: const [
-                            Icon(
-                              Icons.badge_outlined,
-                              size: 12,
-                              color: Color(0xFF64748B),
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              "User",
-                              style: TextStyle(
-                                fontSize: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: const [
+                              Icon(
+                                Icons.badge_outlined,
+                                size: 12,
                                 color: Color(0xFF64748B),
                               ),
-                            ),
-                            Icon(
-                              Icons.arrow_drop_down,
-                              size: 16,
-                              color: Color(0xFF64748B),
-                            ),
-                          ],
+                              SizedBox(width: 4),
+                              Text(
+                                "User",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                size: 16,
+                                color: Color(0xFF64748B),
+                              ),
+                            ],
+                          ),
                         ),
+                        itemBuilder: (context) => [
+                          PopupMenuItem<String>(
+                            enabled: false,
+                            height: 32,
+                            child: Text(
+                              "GANTI ROLE",
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[500],
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'User',
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: const [
+                                Text(
+                                  "User",
+                                  style: TextStyle(
+                                    color: Color(0xFF22C55E),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.check,
+                                  color: Color(0xFF22C55E),
+                                  size: 18,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'Superadmin',
+                            child: Text("Superadmin"),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'Penyelenggara',
+                            child: Text("Penyelenggara"),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'Admin Bangkom',
+                            child: Text("Admin Bangkom"),
+                          ),
+                        ],
+                        onSelected: (value) {
+                          // Handle role change
+                        },
                       ),
                     ],
                   ),
@@ -225,14 +306,16 @@ class AppMenu extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFF7ED),
+                          color: const Color(
+                            0xFFF0FDF4,
+                          ), // Matches Image 2 green bg
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Center(
                           child: Text(
                             "Indonesia",
                             style: TextStyle(
-                              color: AppColors.primaryOrange,
+                              color: Color(0xFF22C55E),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -259,7 +342,15 @@ class AppMenu extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginPage(),
+                      ),
+                      (route) => false,
+                    );
+                  },
                   style: TextButton.styleFrom(
                     backgroundColor: const Color(0xFFFFF1F2),
                     padding: const EdgeInsets.symmetric(vertical: 14),
