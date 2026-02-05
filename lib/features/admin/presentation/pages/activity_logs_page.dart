@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:next/core/theme/app_colors.dart';
-import 'package:next/core/widgets/custom_app_bar.dart';
-import 'package:next/core/widgets/main_footer.dart';
 import '../widgets/admin_sidebar.dart';
+import 'package:next/features/courses/data/services/course_service.dart';
+import 'package:next/features/courses/data/models/log_stats_model.dart';
+import 'package:next/features/courses/data/models/activity_log_model.dart';
+import 'package:intl/intl.dart';
 
 class ActivityLogsPage extends StatefulWidget {
   const ActivityLogsPage({super.key});
@@ -17,21 +19,20 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   int _currentPage = 1;
-  int _rowsPerPage = 25;
+  final int _rowsPerPage = 25;
 
-  final List<Map<String, dynamic>> _logs = List.generate(
-    298,
-    (index) => {
-      "time":
-          "3 Feb 2026, 22.${(60 - (index % 60)).toString().padLeft(2, '0')}.${(59 - (index % 59)).toString().padLeft(2, '0')} WIB",
-      "type": index % 2 == 0 ? "Start Activity" : "Finish Activity",
-      "category": "Learning Activity",
-    },
-  );
+  final CourseService _courseService = CourseService();
+  LogStats? _logStats;
+  List<ActivityLog> _logs = [];
+  PageMeta? _pageMeta;
+  bool _isLoadingStats = true;
+  bool _isLoadingLogs = true;
 
   @override
   void initState() {
     super.initState();
+    _fetchLogStats();
+    _fetchActivityLogs(1); // Fetch first page
     _scrollController.addListener(() {
       if (_scrollController.offset > 50 && !_isScrolled) {
         setState(() => _isScrolled = true);
@@ -41,14 +42,57 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
     });
   }
 
+  Future<void> _fetchLogStats() async {
+    try {
+      final response = await _courseService.getLogStats();
+      if (response.success && mounted) {
+        setState(() {
+          _logStats = response.data;
+          _isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching log stats: $e");
+      if (mounted) setState(() => _isLoadingStats = false);
+    }
+  }
+
+  Future<void> _fetchActivityLogs(int page) async {
+    setState(() => _isLoadingLogs = true);
+    try {
+      final response = await _courseService.getActivityLogs(
+        page: page,
+        perPage: _rowsPerPage,
+      );
+      if (response.success && mounted) {
+        setState(() {
+          _logs = response.data;
+          _pageMeta = response.pageMeta;
+          _currentPage = page;
+          _isLoadingLogs = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching logs: $e");
+      if (mounted) setState(() => _isLoadingLogs = false);
+    }
+  }
+
+  String _formatDate(String isoString) {
+    try {
+      final date = DateTime.parse(isoString).toLocal();
+      return DateFormat("d MMM y, HH.mm.ss 'WIB'").format(date);
+    } catch (e) {
+      return isoString;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    int totalLogs = _logs.length;
-    int totalPages = (totalLogs / _rowsPerPage).ceil();
-    int startIndex = (_currentPage - 1) * _rowsPerPage;
-    int endIndex = startIndex + _rowsPerPage;
-    if (endIndex > totalLogs) endIndex = totalLogs;
-    final currentLogs = _logs.sublist(startIndex, endIndex);
+    int totalLogs = _pageMeta?.totalResultCount ?? 0;
+    int totalPages = _pageMeta?.totalPageCount ?? 1;
+    int startIndex = _pageMeta?.showingFrom ?? 0;
+    int endIndex = _pageMeta?.showingTo ?? 0;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -61,7 +105,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 140),
+                const SizedBox(height: 40),
 
                 // Header
                 Padding(
@@ -81,7 +125,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                               ),
                             ],
@@ -177,42 +221,50 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      _buildSummaryMetricCard(
-                        "Total Log",
-                        "298",
-                        Icons.bar_chart,
-                        const Color(0xFFFFF7ED),
-                        const Color(0xFFF97316),
-                      ),
-                      _buildSummaryMetricCard(
-                        "Hari Ini",
-                        "0",
-                        Icons.calendar_today_outlined,
-                        const Color(0xFFECFEFF),
-                        const Color(0xFF06B6D4),
-                      ),
-                      _buildSummaryMetricCard(
-                        "Minggu Ini",
-                        "210",
-                        Icons.show_chart,
-                        const Color(0xFFFDF2F8),
-                        const Color(0xFFEC4899),
-                      ),
-                      _buildSummaryMetricCard(
-                        "Pengguna Aktif",
-                        "0",
-                        Icons.people_outline,
-                        const Color(0xFFF0FDF4),
-                        const Color(0xFF22C55E),
-                      ),
-                      _buildSummaryMetricCard(
-                        "Start Task",
-                        "Paling Aktif",
-                        Icons.trending_up,
-                        const Color(0xFFFFF7ED),
-                        const Color(0xFFF97316),
-                        isCustomValue: true,
-                      ),
+                      if (_isLoadingStats)
+                        const Center(child: CircularProgressIndicator())
+                      else
+                        Column(
+                          children: [
+                            _buildSummaryMetricCard(
+                              "Total Log",
+                              "${_logStats?.totalLogs ?? 0}",
+                              Icons.bar_chart,
+                              const Color(0xFFFFF7ED),
+                              const Color(0xFFF97316),
+                            ),
+                            _buildSummaryMetricCard(
+                              "Hari Ini",
+                              "${_logStats?.todayCount ?? 0}",
+                              Icons.calendar_today_outlined,
+                              const Color(0xFFECFEFF),
+                              const Color(0xFF06B6D4),
+                            ),
+                            _buildSummaryMetricCard(
+                              "Minggu Ini",
+                              "${_logStats?.weekCount ?? 0}",
+                              Icons.show_chart,
+                              const Color(0xFFFDF2F8),
+                              const Color(0xFFEC4899),
+                            ),
+                            _buildSummaryMetricCard(
+                              "Pengguna Aktif",
+                              "${_logStats?.activeUsers ?? 0}",
+                              Icons.people_outline,
+                              const Color(0xFFF0FDF4),
+                              const Color(0xFF22C55E),
+                            ),
+                            _buildSummaryMetricCard(
+                              "Start Task", // Actually 'Most Active' label
+                              _logStats?.mostActive ?? "N/A",
+                              Icons.trending_up,
+                              const Color(0xFFFFF7ED),
+                              const Color(0xFFF97316),
+                              isCustomValue: true,
+                              titleOverride: "Paling Aktif",
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
@@ -285,37 +337,58 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                       ),
 
                       // Table Data
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border(
-                            left: BorderSide(color: Colors.grey[200]!),
-                            right: BorderSide(color: Colors.grey[200]!),
-                            bottom: BorderSide(color: Colors.grey[200]!),
-                          ),
-                          borderRadius: const BorderRadius.vertical(
-                            bottom: Radius.circular(12),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                      if (_isLoadingLogs)
+                        const Padding(
+                          padding: EdgeInsets.all(32.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (_logs.isEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: const BorderRadius.vertical(
+                              bottom: Radius.circular(12),
                             ),
-                          ],
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: const Center(
+                            child: Text("Tidak ada data log."),
+                          ),
+                        )
+                      else
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border(
+                              left: BorderSide(color: Colors.grey[200]!),
+                              right: BorderSide(color: Colors.grey[200]!),
+                              bottom: BorderSide(color: Colors.grey[200]!),
+                            ),
+                            borderRadius: const BorderRadius.vertical(
+                              bottom: Radius.circular(12),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.02),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: _logs
+                                .map((log) => _buildLogRow(log))
+                                .toList(),
+                          ),
                         ),
-                        child: Column(
-                          children: currentLogs
-                              .map((log) => _buildLogRow(log))
-                              .toList(),
-                        ),
-                      ),
 
                       // Advanced Pagination
                       _buildAdvancedPagination(
                         totalPages,
                         totalLogs,
-                        startIndex + 1,
+                        startIndex,
                         endIndex,
                       ),
                     ],
@@ -323,31 +396,12 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                 ),
 
                 const SizedBox(height: 40),
-                const MainFooter(),
+                const SizedBox(height: 60),
               ],
             ),
           ),
 
           // Sticky App Bar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              color: _isScrolled ? Colors.white : const Color(0xFFF8FAFC),
-              child: SafeArea(
-                bottom: false,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: _isScrolled
-                        ? Border(bottom: BorderSide(color: Colors.grey[200]!))
-                        : null,
-                  ),
-                  child: const CustomAppBar(),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -360,6 +414,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
     Color bgColor,
     Color iconColor, {
     bool isCustomValue = false,
+    String? titleOverride,
   }) {
     return Container(
       width: double.infinity,
@@ -392,7 +447,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            title,
+            titleOverride ?? title,
             style: const TextStyle(
               fontSize: 12,
               color: Color(0xFF64748B),
@@ -459,7 +514,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
     );
   }
 
-  Widget _buildLogRow(Map<String, dynamic> log) {
+  Widget _buildLogRow(ActivityLog log) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -469,7 +524,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
         children: [
           Expanded(
             child: Text(
-              log['time'],
+              _formatDate(log.timestamp),
               style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xFF1E293B),
@@ -491,7 +546,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    log['type'],
+                    log.logTypeName,
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -515,7 +570,7 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    log['category'],
+                    log.categoryLogTypeName,
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -552,56 +607,26 @@ class _ActivityLogsPageState extends State<ActivityLogsPage> {
               _pagerButton(
                 const Icon(Icons.chevron_left, size: 18),
                 false,
-                isDisabled: _currentPage == 1,
-                onTap: () => setState(() => _currentPage--),
+                isDisabled: !_pageMeta!.hasPrev,
+                onTap: () => _fetchActivityLogs(_currentPage - 1),
               ),
-              const SizedBox(width: 8),
-              _pagerButton(
-                const Text(
-                  "1",
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                ),
-                _currentPage == 1,
-                onTap: () => setState(() => _currentPage = 1),
-              ),
-              const SizedBox(width: 8),
-              if (_currentPage > 3) ...[
-                const Text("...", style: TextStyle(color: Color(0xFF64748B))),
-                const SizedBox(width: 8),
-              ],
-              if (_currentPage > 1 && _currentPage < totalPages)
-                _pagerButton(
-                  Text(
-                    _currentPage.toString(),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  true,
-                ),
-              if (_currentPage < totalPages - 2) ...[
-                const SizedBox(width: 8),
-                const Text("...", style: TextStyle(color: Color(0xFF64748B))),
-              ],
               const SizedBox(width: 8),
               _pagerButton(
                 Text(
-                  totalPages.toString(),
+                  "$_currentPage",
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                _currentPage == totalPages,
-                onTap: () => setState(() => _currentPage = totalPages),
+                true, // Always active for current page
               ),
               const SizedBox(width: 8),
               _pagerButton(
                 const Icon(Icons.chevron_right, size: 18),
                 false,
-                isDisabled: _currentPage == totalPages,
-                onTap: () => setState(() => _currentPage++),
+                isDisabled: !_pageMeta!.hasNext,
+                onTap: () => _fetchActivityLogs(_currentPage + 1),
               ),
             ],
           ),

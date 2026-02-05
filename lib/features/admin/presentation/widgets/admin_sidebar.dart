@@ -49,7 +49,7 @@ class _AdminSidebarState extends State<AdminSidebar> {
                           borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.orange.withOpacity(0.2),
+                              color: Colors.orange.withValues(alpha: 0.2),
                               blurRadius: 10,
                             ),
                           ],

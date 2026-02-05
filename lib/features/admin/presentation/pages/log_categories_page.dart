@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:next/core/theme/app_colors.dart';
-import 'package:next/core/widgets/custom_app_bar.dart';
-import 'package:next/core/widgets/main_footer.dart';
 import '../widgets/admin_sidebar.dart';
+import 'package:next/features/courses/data/services/course_service.dart';
+import 'package:next/features/courses/data/models/category_log_type_model.dart';
+import 'package:next/features/courses/data/models/activity_log_model.dart'; // For PageMeta
 
 class LogCategoriesPage extends StatefulWidget {
   const LogCategoriesPage({super.key});
@@ -16,32 +17,17 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
   bool _isScrolled = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final List<Map<String, String>> _categories = [
-    {
-      "title": "Learning Activity",
-      "description":
-          "Course and activity engagement logs · starting, completing, progress tracking",
-    },
-    {
-      "title": "Collaboration",
-      "description":
-          "Forum and discussion interaction logs · posts, comments, replies",
-    },
-    {
-      "title": "Authentication",
-      "description":
-          "User authentication activities · login, logout, session management",
-    },
-    {
-      "title": "Assessment",
-      "description":
-          "Quiz and task evaluation logs · submissions, grading, results",
-    },
-  ];
+  final CourseService _courseService = CourseService();
+  List<CategoryLogType> _categories = [];
+  PageMeta? _pageMeta;
+  bool _isLoading = true;
+  int _currentPage = 1;
+  final int _rowsPerPage = 10;
 
   @override
   void initState() {
     super.initState();
+    _fetchCategories();
     _scrollController.addListener(() {
       if (_scrollController.offset > 50 && !_isScrolled) {
         setState(() => _isScrolled = true);
@@ -49,6 +35,27 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
         setState(() => _isScrolled = false);
       }
     });
+  }
+
+  Future<void> _fetchCategories({int page = 1}) async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await _courseService.getCategoryLogTypes(
+        page: page,
+        perPage: _rowsPerPage,
+      );
+      if (response.success && mounted) {
+        setState(() {
+          _categories = response.data;
+          _pageMeta = response.pageMeta;
+          _currentPage = page;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching category log types: $e");
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -64,7 +71,7 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 140),
+                const SizedBox(height: 40),
 
                 // Header
                 Padding(
@@ -84,7 +91,7 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                               ),
                             ],
@@ -147,54 +154,37 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
                 // Category List
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    children: _categories
-                        .map((cat) => _buildCategoryCard(cat))
-                        .toList(),
-                  ),
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : Column(
+                          children: _categories
+                              .map((cat) => _buildCategoryCard(cat))
+                              .toList(),
+                        ),
                 ),
 
                 // Pagination Footer
                 _buildPaginationFooter(),
 
                 const SizedBox(height: 40),
-                const MainFooter(),
+                const SizedBox(height: 60),
               ],
             ),
           ),
 
           // Sticky App Bar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              color: _isScrolled ? Colors.white : const Color(0xFFF8FAFC),
-              child: SafeArea(
-                bottom: false,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: _isScrolled
-                        ? Border(bottom: BorderSide(color: Colors.grey[200]!))
-                        : null,
-                  ),
-                  child: const CustomAppBar(),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 
-  void _showCategoryDialog({Map<String, String>? category}) {
+  void _showCategoryDialog({CategoryLogType? category}) {
     final bool isEdit = category != null;
     final TextEditingController nameController = TextEditingController(
-      text: category?['title'] ?? '',
+      text: category?.name ?? '',
     );
     final TextEditingController descController = TextEditingController(
-      text: category?['description'] ?? '',
+      text: category?.description ?? '',
     );
 
     showDialog(
@@ -310,9 +300,83 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
                         ),
                         const SizedBox(width: 12),
                         ElevatedButton(
-                          onPressed: () {
-                            // Logic for save
-                            Navigator.pop(context);
+                          onPressed: () async {
+                            if (nameController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Nama kategori wajib diisi"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (isEdit) {
+                              try {
+                                final success = await _courseService
+                                    .updateCategoryLogType(
+                                      id: category.id,
+                                      name: nameController.text,
+                                      description: descController.text,
+                                    );
+
+                                if (success && context.mounted) {
+                                  Navigator.pop(context);
+                                  _fetchCategories(page: _currentPage);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Berhasil memperbarui kategori",
+                                        ),
+                                        backgroundColor: Color(0xFF22C55E),
+                                      ),
+                                    );
+                                  }
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("Gagal: $e"),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            } else {
+                              try {
+                                final success = await _courseService
+                                    .createCategoryLogType(
+                                      name: nameController.text,
+                                      description: descController.text,
+                                    );
+
+                                if (success && context.mounted) {
+                                  Navigator.pop(context);
+                                  _fetchCategories(page: 1);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "Berhasil membuat kategori baru",
+                                        ),
+                                        backgroundColor: Color(0xFF22C55E),
+                                      ),
+                                    );
+                                  }
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("Gagal: $e"),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF22C55E),
@@ -368,7 +432,7 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryOrange.withOpacity(0.2),
+              color: AppColors.primaryOrange.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -393,7 +457,7 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
     );
   }
 
-  Widget _buildCategoryCard(Map<String, String> category) {
+  Widget _buildCategoryCard(CategoryLogType category) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -403,7 +467,7 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
         border: Border.all(color: Colors.grey[100]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -417,7 +481,7 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  category['title']!,
+                  category.name,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -426,7 +490,7 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  category['description']!,
+                  category.description,
                   style: const TextStyle(
                     fontSize: 12,
                     color: Color(0xFF64748B),
@@ -463,10 +527,11 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
         children: [
-          const Text(
-            "Menampilkan 1 sampai 4 dari 4",
-            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-          ),
+          if (_pageMeta != null)
+            Text(
+              "Menampilkan ${_pageMeta!.showingFrom} sampai ${_pageMeta!.showingTo} dari ${_pageMeta!.totalResultCount}",
+              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -474,13 +539,21 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
               _pagerButton(
                 const Icon(Icons.chevron_left, size: 18),
                 false,
-                isDisabled: true,
+                isDisabled: !(_pageMeta?.hasPrev ?? false),
+                onTap: () {
+                  if (_pageMeta?.hasPrev ?? false) {
+                    _fetchCategories(page: _currentPage - 1);
+                  }
+                },
               ),
               const SizedBox(width: 8),
               _pagerButton(
-                const Text(
-                  "1",
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                Text(
+                  "$_currentPage",
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 true,
               ),
@@ -488,7 +561,12 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
               _pagerButton(
                 const Icon(Icons.chevron_right, size: 18),
                 false,
-                isDisabled: true,
+                isDisabled: !(_pageMeta?.hasNext ?? false),
+                onTap: () {
+                  if (_pageMeta?.hasNext ?? false) {
+                    _fetchCategories(page: _currentPage + 1);
+                  }
+                },
               ),
             ],
           ),
@@ -541,25 +619,29 @@ class _LogCategoriesPageState extends State<LogCategoriesPage> {
     Widget content,
     bool isActive, {
     bool isDisabled = false,
+    VoidCallback? onTap,
   }) {
-    return Opacity(
-      opacity: isDisabled ? 0.5 : 1.0,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.primaryOrange : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isActive ? Colors.transparent : Colors.grey[200]!,
-          ),
-        ),
-        child: Center(
-          child: DefaultTextStyle(
-            style: TextStyle(
-              color: isActive ? Colors.white : const Color(0xFF1E293B),
+    return GestureDetector(
+      onTap: isDisabled ? null : onTap,
+      child: Opacity(
+        opacity: isDisabled ? 0.5 : 1.0,
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.primaryOrange : Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isActive ? Colors.transparent : Colors.grey[200]!,
             ),
-            child: content,
+          ),
+          child: Center(
+            child: DefaultTextStyle(
+              style: TextStyle(
+                color: isActive ? Colors.white : const Color(0xFF1E293B),
+              ),
+              child: content,
+            ),
           ),
         ),
       ),

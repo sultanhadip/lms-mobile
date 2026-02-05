@@ -5,6 +5,9 @@ import 'package:next/core/widgets/custom_app_bar.dart';
 import 'package:next/core/widgets/main_footer.dart';
 import 'package:next/core/widgets/app_menu.dart';
 import 'package:next/core/widgets/course_card.dart';
+import 'package:next/features/courses/data/services/course_service.dart';
+import 'package:next/features/courses/data/models/course_model.dart';
+import 'package:next/features/courses/presentation/pages/course_detail_page.dart';
 
 class CoursesPage extends StatefulWidget {
   const CoursesPage({super.key});
@@ -17,68 +20,17 @@ class _CoursesPageState extends State<CoursesPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
 
-  // Dummy courses data
-  final List<Map<String, String>> _allCourses = [
-    {
-      "title": "Pelatihan Innas Sensus Ekonomi 2026 Kelas C",
-      "category": "Pelatihan Subject Matter Survey Sensus",
-      "image": "",
-      "instructor": "Budi Santoso",
-      "students": "120",
-    },
-    {
-      "title": "Pelatihan Sensus Ekonomi 2026 Kelas A",
-      "category": "Sensus Ekonomi",
-      "image": "",
-      "instructor": "Siti Nurhaliza",
-      "students": "85",
-    },
-    {
-      "title": "Analisis Data Statistik Dasar",
-      "category": "Statistik",
-      "image": "",
-      "instructor": "Ahmad Wijaya",
-      "students": "250",
-    },
-    {
-      "title": "Manajemen Data Besar I",
-      "category": "Big Data",
-      "image": "",
-      "instructor": "Hadi Prabowo",
-      "students": "45",
-    },
-    {
-      "title": "Kepemimpinan Digital",
-      "category": "Leadership",
-      "image": "",
-      "instructor": "Dr. Arifin",
-      "students": "67",
-    },
-    {
-      "title": "Visualisasi Data Modern",
-      "category": "Data Science",
-      "image": "",
-      "instructor": "Rina Amalia",
-      "students": "134",
-    },
-    {
-      "title": "Pelatihan Innas Sensus Ekonomi 2026 Kelas D",
-      "category": "Sensus Ekonomi",
-      "image": "",
-      "instructor": "Budi Santoso",
-      "students": "92",
-    },
-    {
-      "title": "Basic Python for Data Analyst",
-      "category": "Data Science",
-      "image": "",
-      "instructor": "Andi Setiawan",
-      "students": "310",
-    },
-  ];
+  // API Service
+  final CourseService _courseService = CourseService();
+
+  // State management
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<CourseModel> _courses = [];
+  PageMeta? _pageMeta;
 
   int _currentPage = 1;
-  static const int _itemsPerPage = 5;
+  static const int _itemsPerPage = 8;
 
   String _selectedCategory = "Semua Kategori";
   String _selectedSort = "Urutkan";
@@ -93,6 +45,34 @@ class _CoursesPageState extends State<CoursesPage> {
         setState(() => _isScrolled = false);
       }
     });
+
+    // Fetch courses from API
+    _fetchCourses();
+  }
+
+  Future<void> _fetchCourses() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await _courseService.getPublicCourses(
+        page: _currentPage,
+        perPage: _itemsPerPage,
+      );
+
+      setState(() {
+        _courses = response.data;
+        _pageMeta = response.pageMeta;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -103,14 +83,6 @@ class _CoursesPageState extends State<CoursesPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Pagination logic
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = (startIndex + _itemsPerPage < _allCourses.length)
-        ? startIndex + _itemsPerPage
-        : _allCourses.length;
-    final currentCourses = _allCourses.sublist(startIndex, endIndex);
-    final totalPages = (_allCourses.length / _itemsPerPage).ceil();
-
     return Scaffold(
       backgroundColor: AppColors.background,
       endDrawer: const AppMenu(),
@@ -190,35 +162,103 @@ class _CoursesPageState extends State<CoursesPage> {
                       ),
                       const SizedBox(height: 32),
 
-                      // Course List
-                      ...currentCourses.map(
-                        (course) => CourseCard(
-                          title: course['title']!,
-                          category: course['category']!,
-                          imageUrl: course['image']!,
-                          instructor: course['instructor'] ?? "-",
-                          studentCount:
-                              int.tryParse(course['students'] ?? "0") ?? 0,
-                          width: double.infinity,
+                      // Loading State
+                      if (_isLoading)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(40.0),
+                            child: CircularProgressIndicator(
+                              color: AppColors.primaryOrange,
+                            ),
+                          ),
                         ),
-                      ),
+
+                      // Error State
+                      if (_errorMessage != null && !_isLoading)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(40.0),
+                            child: Column(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  size: 64,
+                                  color: Colors.red,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Gagal memuat data',
+                                  style: AppTextStyles.sectionTitle,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _errorMessage!,
+                                  style: AppTextStyles.bodyText,
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: _fetchCourses,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryOrange,
+                                  ),
+                                  child: const Text('Coba Lagi'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      // Course List
+                      if (!_isLoading && _errorMessage == null)
+                        ..._courses.map((course) {
+                          // Get teacher names, if empty use manager name
+                          String instructorName = course.teachers.isNotEmpty
+                              ? course.teachers.map((t) => t.name).join(', ')
+                              : course.manager.name;
+
+                          return CourseCard(
+                            title: course.name,
+                            category: course.groupCourse.description.category,
+                            imageUrl: course.groupCourse.thumbnail,
+                            instructor: instructorName,
+                            studentCount: course.activityCount,
+                            rating: course.rating,
+                            width: double.infinity,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      CourseDetailPage(course: course),
+                                ),
+                              );
+                            },
+                          );
+                        }),
 
                       const SizedBox(height: 24),
 
                       // Pagination Text
-                      Center(
-                        child: Text(
-                          "Menampilkan ${startIndex + 1}-${endIndex} dari ${_allCourses.length} kursus",
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 13,
+                      if (!_isLoading &&
+                          _errorMessage == null &&
+                          _pageMeta != null)
+                        Center(
+                          child: Text(
+                            "Menampilkan ${_pageMeta!.showingFrom}-${_pageMeta!.showingTo} dari ${_pageMeta!.totalResultCount} kursus",
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
-                      ),
                       const SizedBox(height: 16),
 
                       // Pagination Buttons
-                      _buildPagination(totalPages),
+                      if (!_isLoading &&
+                          _errorMessage == null &&
+                          _pageMeta != null)
+                        _buildPagination(_pageMeta!.totalPageCount),
 
                       const SizedBox(height: 60),
                     ],
@@ -324,6 +364,7 @@ class _CoursesPageState extends State<CoursesPage> {
             setState(() {
               _currentPage = page;
             });
+            _fetchCourses();
             _scrollController.animateTo(
               0,
               duration: const Duration(milliseconds: 500),

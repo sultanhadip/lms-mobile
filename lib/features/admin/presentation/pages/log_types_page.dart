@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:next/core/theme/app_colors.dart';
-import 'package:next/core/widgets/custom_app_bar.dart';
-import 'package:next/core/widgets/main_footer.dart';
 import '../widgets/admin_sidebar.dart';
+import 'package:next/features/courses/data/services/course_service.dart';
+import 'package:next/features/courses/data/models/log_type_model.dart';
+import 'package:next/features/courses/data/models/category_log_type_model.dart';
+import 'package:next/features/courses/data/models/activity_log_model.dart'; // For PageMeta
 
 class LogTypesPage extends StatefulWidget {
   const LogTypesPage({super.key});
@@ -16,62 +18,19 @@ class _LogTypesPageState extends State<LogTypesPage> {
   bool _isScrolled = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final List<Map<String, String>> _logTypes = [
-    {
-      "title": "User Logout",
-      "category": "Authentication",
-      "description": "User logged out from the LMS platform",
-    },
-    {
-      "title": "User Login",
-      "category": "Authentication",
-      "description": "User successfully logged into the LMS platform",
-    },
-    {
-      "title": "Start Task",
-      "category": "Assessment",
-      "description": "User started assignment or task for evaluation",
-    },
-    {
-      "title": "Start Quiz",
-      "category": "Assessment",
-      "description": "User began taking a quiz or assessment",
-    },
-    {
-      "title": "Start Course",
-      "category": "Learning Activity",
-      "description": "User began accessing course content and materials",
-    },
-    {
-      "title": "Start Activity",
-      "category": "Learning Activity",
-      "description": "User started a learning activity or assignments",
-    },
-    {
-      "title": "Finish Task",
-      "category": "Assessment",
-      "description": "User submitted or finished a task",
-    },
-    {
-      "title": "Finish Quiz",
-      "category": "Assessment",
-      "description": "User completed quiz and submitted answers",
-    },
-    {
-      "title": "Finish Course",
-      "category": "Learning Activity",
-      "description": "User completed course session or finished entire course",
-    },
-    {
-      "title": "Finish Activity",
-      "category": "Learning Activity",
-      "description": "User finished a learning activity",
-    },
-  ];
+  final CourseService _courseService = CourseService();
+  List<LogType> _logTypes = [];
+  List<CategoryLogType> _categories = [];
+  PageMeta? _pageMeta;
+  bool _isLoading = true;
+  int _currentPage = 1;
+  final int _rowsPerPage = 10;
 
   @override
   void initState() {
     super.initState();
+    _fetchLogTypes();
+    _fetchCategories();
     _scrollController.addListener(() {
       if (_scrollController.offset > 50 && !_isScrolled) {
         setState(() => _isScrolled = true);
@@ -79,6 +38,40 @@ class _LogTypesPageState extends State<LogTypesPage> {
         setState(() => _isScrolled = false);
       }
     });
+  }
+
+  Future<void> _fetchLogTypes({int page = 1}) async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await _courseService.getLogTypes(
+        page: page,
+        perPage: _rowsPerPage,
+      );
+      if (response.success && mounted) {
+        setState(() {
+          _logTypes = response.data;
+          _pageMeta = response.pageMeta;
+          _currentPage = page;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching log types: $e");
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final response = await _courseService.getCategoryLogTypes(perPage: 100);
+      if (response.success && mounted) {
+        setState(() {
+          _categories = response.data;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching categories: $e");
+    }
   }
 
   @override
@@ -94,7 +87,7 @@ class _LogTypesPageState extends State<LogTypesPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 140),
+                const SizedBox(height: 40),
 
                 // Header
                 Padding(
@@ -114,7 +107,7 @@ class _LogTypesPageState extends State<LogTypesPage> {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                               ),
                             ],
@@ -182,56 +175,39 @@ class _LogTypesPageState extends State<LogTypesPage> {
                 // Log Type List
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    children: _logTypes
-                        .map((type) => _buildLogTypeCard(type))
-                        .toList(),
-                  ),
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : Column(
+                          children: _logTypes
+                              .map((type) => _buildLogTypeCard(type))
+                              .toList(),
+                        ),
                 ),
 
                 // Pagination Footer
                 _buildPaginationFooter(),
 
                 const SizedBox(height: 40),
-                const MainFooter(),
+                const SizedBox(height: 60),
               ],
             ),
           ),
 
           // Sticky App Bar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              color: _isScrolled ? Colors.white : const Color(0xFFF8FAFC),
-              child: SafeArea(
-                bottom: false,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: _isScrolled
-                        ? Border(bottom: BorderSide(color: Colors.grey[200]!))
-                        : null,
-                  ),
-                  child: const CustomAppBar(),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 
-  void _showLogTypeDialog({Map<String, String>? logType}) {
+  void _showLogTypeDialog({LogType? logType}) {
     final bool isEdit = logType != null;
     final TextEditingController nameController = TextEditingController(
-      text: logType?['title'] ?? '',
+      text: logType?.name ?? '',
     );
     final TextEditingController descController = TextEditingController(
-      text: logType?['description'] ?? '',
+      text: logType?.description ?? '',
     );
-    String? selectedCategory = logType?['category'];
+    String? selectedCategoryId = logType?.idCategoryLogType;
 
     showDialog(
       context: context,
@@ -321,7 +297,7 @@ class _LogTypesPageState extends State<LogTypesPage> {
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: selectedCategory,
+                            value: selectedCategoryId,
                             hint: const Text(
                               "Pilih Kategori...",
                               style: TextStyle(
@@ -330,25 +306,20 @@ class _LogTypesPageState extends State<LogTypesPage> {
                               ),
                             ),
                             isExpanded: true,
-                            items:
-                                [
-                                      "Authentication",
-                                      "Assessment",
-                                      "Learning Activity",
-                                    ]
-                                    .map(
-                                      (cat) => DropdownMenuItem(
-                                        value: cat,
-                                        child: Text(
-                                          cat,
-                                          style: const TextStyle(fontSize: 14),
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
+                            items: _categories
+                                .map(
+                                  (cat) => DropdownMenuItem(
+                                    value: cat.id,
+                                    child: Text(
+                                      cat.name,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                             onChanged: (val) {
                               setDialogState(() {
-                                selectedCategory = val;
+                                selectedCategoryId = val;
                               });
                             },
                           ),
@@ -400,9 +371,99 @@ class _LogTypesPageState extends State<LogTypesPage> {
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton(
-                            onPressed: () {
-                              // Logic for save
-                              Navigator.pop(context);
+                            onPressed: () async {
+                              if (nameController.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Nama tipe log wajib diisi"),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              if (selectedCategoryId == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Kategori wajib dipilih"),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              if (isEdit) {
+                                try {
+                                  final success = await _courseService
+                                      .updateLogType(
+                                        id: logType.id,
+                                        name: nameController.text,
+                                        description: descController.text,
+                                        categoryId: selectedCategoryId!,
+                                      );
+
+                                  if (success && context.mounted) {
+                                    Navigator.pop(context);
+                                    _fetchLogTypes(page: _currentPage);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Berhasil memperbarui tipe log",
+                                          ),
+                                          backgroundColor: Color(0xFF22C55E),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("Gagal: $e"),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              } else {
+                                try {
+                                  final success = await _courseService
+                                      .createLogType(
+                                        name: nameController.text,
+                                        description: descController.text,
+                                        categoryId: selectedCategoryId!,
+                                      );
+
+                                  if (success && context.mounted) {
+                                    Navigator.pop(context);
+                                    _fetchLogTypes(page: 1);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Berhasil membuat tipe log baru",
+                                          ),
+                                          backgroundColor: Color(0xFF22C55E),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("Gagal: $e"),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF22C55E),
@@ -486,7 +547,7 @@ class _LogTypesPageState extends State<LogTypesPage> {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryOrange.withOpacity(0.2),
+              color: AppColors.primaryOrange.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -511,26 +572,7 @@ class _LogTypesPageState extends State<LogTypesPage> {
     );
   }
 
-  Widget _buildLogTypeCard(Map<String, String> type) {
-    Color catColor;
-    Color catBg;
-
-    switch (type['category']) {
-      case 'Authentication':
-        catColor = const Color(0xFF92400E);
-        catBg = const Color(0xFFFEF3C7);
-        break;
-      case 'Assessment':
-        catColor = const Color(0xFF1E40AF);
-        catBg = const Color(0xFFDBEAFE);
-        break;
-      case 'Learning Activity':
-      default:
-        catColor = const Color(0xFFF97316);
-        catBg = const Color(0xFFFFF7ED);
-        break;
-    }
-
+  Widget _buildLogTypeCard(LogType type) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -540,7 +582,7 @@ class _LogTypesPageState extends State<LogTypesPage> {
         border: Border.all(color: Colors.grey[100]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -556,7 +598,7 @@ class _LogTypesPageState extends State<LogTypesPage> {
                 Row(
                   children: [
                     Text(
-                      type['title']!,
+                      type.name,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -564,29 +606,11 @@ class _LogTypesPageState extends State<LogTypesPage> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: catBg,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        type['category']!,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: catColor,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  type['description']!,
+                  type.description,
                   style: const TextStyle(
                     fontSize: 12,
                     color: Color(0xFF64748B),
@@ -623,10 +647,11 @@ class _LogTypesPageState extends State<LogTypesPage> {
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
         children: [
-          const Text(
-            "Menampilkan 1 sampai 10 dari 12",
-            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-          ),
+          if (_pageMeta != null)
+            Text(
+              "Menampilkan ${_pageMeta!.showingFrom} sampai ${_pageMeta!.showingTo} dari ${_pageMeta!.totalResultCount}",
+              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -634,26 +659,35 @@ class _LogTypesPageState extends State<LogTypesPage> {
               _pagerButton(
                 const Icon(Icons.chevron_left, size: 18),
                 false,
-                isDisabled: true,
+                isDisabled: !(_pageMeta?.hasPrev ?? false),
+                onTap: () {
+                  if (_pageMeta?.hasPrev ?? false) {
+                    _fetchLogTypes(page: _currentPage - 1);
+                  }
+                },
               ),
               const SizedBox(width: 8),
               _pagerButton(
-                const Text(
-                  "1",
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                Text(
+                  "$_currentPage",
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 true,
               ),
               const SizedBox(width: 8),
               _pagerButton(
-                const Text(
-                  "2",
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                ),
+                const Icon(Icons.chevron_right, size: 18),
                 false,
+                isDisabled: !(_pageMeta?.hasNext ?? false),
+                onTap: () {
+                  if (_pageMeta?.hasNext ?? false) {
+                    _fetchLogTypes(page: _currentPage + 1);
+                  }
+                },
               ),
-              const SizedBox(width: 8),
-              _pagerButton(const Icon(Icons.chevron_right, size: 18), false),
             ],
           ),
           const SizedBox(height: 24),
@@ -705,25 +739,29 @@ class _LogTypesPageState extends State<LogTypesPage> {
     Widget content,
     bool isActive, {
     bool isDisabled = false,
+    VoidCallback? onTap,
   }) {
-    return Opacity(
-      opacity: isDisabled ? 0.5 : 1.0,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.primaryOrange : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isActive ? Colors.transparent : Colors.grey[200]!,
-          ),
-        ),
-        child: Center(
-          child: DefaultTextStyle(
-            style: TextStyle(
-              color: isActive ? Colors.white : const Color(0xFF1E293B),
+    return GestureDetector(
+      onTap: isDisabled ? null : onTap,
+      child: Opacity(
+        opacity: isDisabled ? 0.5 : 1.0,
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.primaryOrange : Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isActive ? Colors.transparent : Colors.grey[200]!,
             ),
-            child: content,
+          ),
+          child: Center(
+            child: DefaultTextStyle(
+              style: TextStyle(
+                color: isActive ? Colors.white : const Color(0xFF1E293B),
+              ),
+              child: content,
+            ),
           ),
         ),
       ),

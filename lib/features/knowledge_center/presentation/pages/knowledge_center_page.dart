@@ -5,6 +5,10 @@ import 'package:next/core/widgets/custom_app_bar.dart';
 import 'package:next/core/widgets/knowledge_card.dart';
 import 'package:next/core/widgets/main_footer.dart';
 import 'package:next/features/knowledge_center/presentation/pages/knowledge_detail_page.dart';
+import 'package:next/features/knowledge_center/data/services/knowledge_service.dart';
+import 'package:next/features/knowledge_center/data/models/knowledge_stats_model.dart';
+import 'package:next/features/knowledge_center/data/models/knowledge_subject_model.dart';
+import 'package:next/features/knowledge_center/data/models/knowledge_content_model.dart';
 
 class KnowledgeCenterPage extends StatefulWidget {
   const KnowledgeCenterPage({super.key});
@@ -20,54 +24,103 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
   bool _showAllSubjects = false;
   String _selectedSort = "Terbaru";
 
-  final List<String> _tabs = ["Semua", "Webinars", "Konten"];
-  final List<Map<String, dynamic>> _subjects = [
-    {"name": "Akuntansi", "icon": Icons.description_outlined},
-    {"name": "Data Sains", "icon": Icons.psychology_outlined},
-    {"name": "Ekonomi", "icon": Icons.monetization_on_outlined},
-    {"name": "Kependudukan", "icon": Icons.people_outline},
-    {"name": "Komputer", "icon": Icons.computer_outlined},
-    {"name": "Pertanian", "icon": Icons.eco_outlined},
-    {"name": "Sistem Informasi", "icon": Icons.forum_outlined},
-    {"name": "werwer", "icon": Icons.language_outlined},
-  ];
+  // Stats
+  final KnowledgeService _knowledgeService = KnowledgeService();
+  KnowledgeStatsModel? _stats;
+  bool _isLoadingStats = true;
 
-  final List<Map<String, dynamic>> _knowledgeItems = [
-    {
-      "title": "Webinar Dasar-dasar Akuntansi",
-      "snippet":
-          "Webinar Dasar-dasar Akuntansi diselenggarakan untuk memberikan pemahaman awal mengenai prinsip, konsep, dan fungsi akuntansi...",
-      "type": "Webinar",
-      "category": "Akuntansi",
-      "views": 6,
-      "likes": 1,
-      "source": "Pusat Pendidikan dan Pelatihan",
-    },
-    {
-      "title": "Analisis Big Data di Instansi Pemerintah",
-      "snippet":
-          "Bagaimana memanfaatkan potensi big data untuk pengambilan kebijakan yang lebih akurat dan terukur...",
-      "type": "Konten",
-      "category": "Data Sains",
-      "views": 89,
-      "likes": 34,
-      "source": "Pusat Pendidikan dan Pelatihan",
-    },
-    {
-      "title": "Statistik Sektoral untuk Pembangunan Daerah",
-      "snippet":
-          "Panduan implementasi statistik sektoral di tingkat daerah sesuai dengan standar Satu Data Indonesia...",
-      "type": "Video",
-      "category": "Statistik",
-      "views": 45,
-      "likes": 12,
-      "source": "Pusat Pendidikan dan Pelatihan",
-    },
-  ];
+  // Subjects
+  List<KnowledgeSubjectModel> _subjectsList = [];
+  bool _isLoadingSubjects = true;
+
+  // Knowledge List
+  List<KnowledgeContentModel> _knowledgeList = [];
+  bool _isLoadingKnowledge = true;
+
+  // Trending List
+  List<KnowledgeContentModel> _trendingList = [];
+  bool _isLoadingTrending = true;
+
+  final List<String> _tabs = ["Semua", "Webinars", "Konten"];
+
+  // Replaced static _subjects with _subjectsList logic
+
+  Future<void> _fetchStats() async {
+    try {
+      final response = await _knowledgeService.getKnowledgeStats();
+      if (response.success) {
+        setState(() {
+          _stats = response.data;
+          _isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching stats: $e");
+      setState(() => _isLoadingStats = false);
+    }
+  }
+
+  Future<void> _fetchSubjects() async {
+    try {
+      final response = await _knowledgeService.getKnowledgeSubjects();
+      if (response.success) {
+        final sortedList = List<KnowledgeSubjectModel>.from(response.data);
+        sortedList.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
+
+        setState(() {
+          _subjectsList = sortedList;
+          _isLoadingSubjects = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching subjects: $e");
+      setState(() => _isLoadingSubjects = false);
+    }
+  }
+
+  Future<void> _fetchKnowledgeList() async {
+    try {
+      final response = await _knowledgeService.getKnowledgeList(
+        page: 1,
+        perPage: 12,
+        orderBy: 'createdAt',
+      );
+      if (response.success) {
+        setState(() {
+          _knowledgeList = response.data;
+          _isLoadingKnowledge = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching knowledge list: $e");
+      setState(() => _isLoadingKnowledge = false);
+    }
+  }
+
+  Future<void> _fetchTrendingList() async {
+    try {
+      final response = await _knowledgeService.getKnowledgeList();
+      if (response.success) {
+        setState(() {
+          _trendingList = response.data;
+          _isLoadingTrending = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching trending list: $e");
+      setState(() => _isLoadingTrending = false);
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    _fetchStats();
+    _fetchSubjects();
+    _fetchKnowledgeList();
+    _fetchTrendingList();
     _scrollController.addListener(() {
       if (_scrollController.offset > 50 && !_isScrolled) {
         setState(() => _isScrolled = true);
@@ -146,7 +199,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.orange.withOpacity(0.2)),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -215,7 +268,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -270,7 +323,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
                       boxShadow: isActive
                           ? [
                               BoxShadow(
-                                color: Colors.orange.withOpacity(0.3),
+                                color: Colors.orange.withValues(alpha: 0.3),
                                 blurRadius: 12,
                                 offset: const Offset(0, 6),
                               ),
@@ -326,7 +379,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: iconColor.withOpacity(0.1)),
+        border: Border.all(color: iconColor.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
@@ -369,33 +422,48 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
   }
 
   Widget _buildStatsGrid() {
+    if (_isLoadingStats) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final stats =
+        _stats ??
+        KnowledgeStatsModel(
+          totalKnowledge: 0,
+          totalWebinars: 0,
+          totalViews: 0,
+          totalLikes: 0,
+        );
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
       child: Column(
         children: [
           _buildStatVerticalCard(
-            count: "3",
+            count: stats.totalKnowledge.toString(),
             label: "Total Konten",
             icon: Icons.menu_book_outlined,
             bgColor: const Color(0xFFF97316),
             isFullColor: true,
           ),
           _buildStatVerticalCard(
-            count: "5",
+            count: stats.totalWebinars.toString(),
             label: "Total Webinar",
             icon: Icons.people_outline,
             bgColor: const Color(0xFFF0FDF4),
             indicatorColor: const Color(0xFF22C55E),
           ),
           _buildStatVerticalCard(
-            count: "37",
+            count: stats.totalViews.toString(),
             label: "Total Dilihat",
             icon: Icons.visibility_outlined,
             bgColor: const Color(0xFFFDF4FF),
-            indicatorColor: const Color(0xFF10B981),
+            indicatorColor: const Color(
+              0xFF10B981,
+            ), // Fixed color to match request/design if needed or keep green
           ),
           _buildStatVerticalCard(
-            count: "5",
+            count: stats.totalLikes.toString(),
             label: "Total Disukai",
             icon: Icons.thumb_up_outlined,
             bgColor: const Color(0xFFFFF7ED),
@@ -434,7 +502,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
               decoration: BoxDecoration(
                 color:
                     (isFullColor ? Colors.white : (indicatorColor ?? bgColor))
-                        .withOpacity(0.1),
+                        .withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
             ),
@@ -447,7 +515,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isFullColor
-                        ? Colors.white.withOpacity(0.2)
+                        ? Colors.white.withValues(alpha: 0.2)
                         : (indicatorColor ?? bgColor),
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -474,7 +542,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: isFullColor
-                            ? Colors.white.withOpacity(0.8)
+                            ? Colors.white.withValues(alpha: 0.8)
                             : const Color(0xFF64748B),
                       ),
                     ),
@@ -563,14 +631,17 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
             ),
           ),
           const SizedBox(height: 20),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            children: _subjects
-                .map((s) => _buildSubjectBtn(s['name'], s['icon']))
-                .toList(),
-          ),
+          _isLoadingSubjects
+              ? const Center(child: CircularProgressIndicator())
+              : Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: _subjectsList
+                      .take(_showAllSubjects ? _subjectsList.length : 2)
+                      .map((s) => _buildSubjectBtn(s.name, _getIcon(s.icon)))
+                      .toList(),
+                ),
           const SizedBox(height: 32),
           const Divider(),
           const SizedBox(height: 12),
@@ -643,6 +714,29 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
     );
   }
 
+  IconData _getIcon(String iconName) {
+    switch (iconName) {
+      case 'file-check':
+        return Icons.description_outlined;
+      case 'brain-circuit':
+        return Icons.psychology_outlined;
+      case 'circle-dollar-sign':
+        return Icons.monetization_on_outlined;
+      case 'users':
+        return Icons.people_outline;
+      case 'computer':
+        return Icons.computer_outlined;
+      case 'sprout':
+        return Icons.eco_outlined;
+      case 'message-square-code':
+        return Icons.chat_bubble_outline;
+      case 'baby':
+        return Icons.child_care;
+      default:
+        return Icons.grid_view;
+    }
+  }
+
   Widget _buildContentList() {
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -695,17 +789,44 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
             },
           ),
           const SizedBox(height: 24),
-          ..._knowledgeItems.map(
-            (item) => KnowledgeCard(
-              item: item,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => KnowledgeDetailPage(item: item),
+          if (_isLoadingKnowledge)
+            const Center(child: CircularProgressIndicator())
+          else if (_knowledgeList.isEmpty)
+            const Center(child: Text("Belum ada materi."))
+          else
+            ..._knowledgeList.map(
+              (item) => KnowledgeCard(
+                item: {
+                  'title': item.title,
+                  'snippet': item.description,
+                  'type': item.type,
+                  'category': item
+                      .subject, // Using subject as category badge as requested/inferred
+                  'views': item.viewCount,
+                  'likes': item.likeCount,
+                  'source': item.penyelenggara,
+                  'image': item.thumbnail,
+                  'contentType': item.contentType,
+                },
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => KnowledgeDetailPage(
+                      item: {
+                        'title': item.title,
+                        'snippet': item.description,
+                        'type': item.type,
+                        'category': item.subject,
+                        'views': item.viewCount,
+                        'likes': item.likeCount,
+                        'source': item.penyelenggara,
+                        'image': item.thumbnail,
+                      },
+                    ), // You might want to pass the actual model to detail page too eventually
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -830,7 +951,7 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
           decoration: BoxDecoration(
             color: const Color(0xFFFFF7ED),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.orange.withOpacity(0.2)),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -943,66 +1064,134 @@ class _KnowledgeCenterPageState extends State<KnowledgeCenterPage> {
   }
 
   Widget _buildTrendingKnowledge() {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF7ED),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.orange.withOpacity(0.2)),
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFFFF7ED).withValues(
+        alpha: 0.3,
+      ), // Light orange background for the entire section
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.trending_up, size: 14, color: Colors.orange),
+                SizedBox(width: 8),
+                Text(
+                  "Paling Populer",
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.trending_up, size: 14, color: Colors.orange),
-              SizedBox(width: 8),
-              Text(
-                "Paling Populer",
+          const SizedBox(height: 24),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              // Decorative Diamond
+              Transform.rotate(
+                angle: 0.785398, // 45 degrees
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFED7AA).withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const Text(
+                "Pengetahuan Trending",
                 style: TextStyle(
-                  color: Colors.orange,
-                  fontSize: 11,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
+                  color: Color(0xFF7C2D12),
                 ),
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          "Pengetahuan Trending",
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF7C2D12),
+          const SizedBox(height: 12),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              "Temukan materi yang paling disukai oleh komunitas kami",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 40),
-          child: Text(
-            "Temukan materi yang paling disukai oleh komunitas kami",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
-          ),
-        ),
-        const SizedBox(height: 32),
-        SizedBox(
-          height: 380,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            scrollDirection: Axis.horizontal,
-            itemCount: _knowledgeItems.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 16),
-            itemBuilder: (context, index) {
-              return SizedBox(
-                width: 280,
-                child: KnowledgeCard(item: _knowledgeItems[index]),
-              );
-            },
-          ),
-        ),
-      ],
+          const SizedBox(height: 40),
+
+          if (_isLoadingTrending)
+            const Center(child: CircularProgressIndicator())
+          else if (_trendingList.isEmpty)
+            const Center(child: Text("Belum ada materi trending."))
+          else
+            SizedBox(
+              height: 420, // Adjusted height for cards
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                scrollDirection: Axis.horizontal,
+                itemCount: _trendingList.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  final item = _trendingList[index];
+                  return SizedBox(
+                    width:
+                        300, // Slightly wider as per image suggestion potentially
+                    child: KnowledgeCard(
+                      item: {
+                        'title': item.title,
+                        'snippet': item.description,
+                        'type': item.type,
+                        'category': item.subject,
+                        'views': item.viewCount,
+                        'likes': item.likeCount,
+                        'source': item.penyelenggara,
+                        'image': item.thumbnail,
+                        'contentType': item.contentType,
+                      },
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => KnowledgeDetailPage(
+                            item: {
+                              'title': item.title,
+                              'snippet': item.description,
+                              'type': item.type,
+                              'category': item.subject,
+                              'views': item.viewCount,
+                              'likes': item.likeCount,
+                              'source': item.penyelenggara,
+                              'image': item.thumbnail,
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

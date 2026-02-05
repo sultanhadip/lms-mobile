@@ -135,7 +135,7 @@ class _UserDashboardPageState extends State<UserDashboardPage>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -192,7 +192,7 @@ class _UserDashboardPageState extends State<UserDashboardPage>
             border: Border.all(color: const Color(0xFFF1F5F9)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -307,7 +307,7 @@ class _UserDashboardPageState extends State<UserDashboardPage>
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
-          value: "Terbaru",
+          initialValue: "Terbaru",
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
@@ -410,7 +410,7 @@ class _UserDashboardPageState extends State<UserDashboardPage>
         border: Border.all(color: const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -426,7 +426,7 @@ class _UserDashboardPageState extends State<UserDashboardPage>
                   top: Radius.circular(16),
                 ),
                 child: Image.network(
-                  "https://pusdiklat.bps.go.id/media/images/webinar/banner_webinar_1684742400.jpg",
+                  "https://placehold.co/600x400/png",
                   height: 200,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -514,7 +514,7 @@ class _UserDashboardPageState extends State<UserDashboardPage>
                   width: 20,
                   height: 20,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(color: Colors.grey[400]!),
                   ),
@@ -813,7 +813,7 @@ class _UserDashboardPageState extends State<UserDashboardPage>
         border: Border.all(color: const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -847,7 +847,7 @@ class _UserDashboardPageState extends State<UserDashboardPage>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(icon, color: color, size: 28),

@@ -83,7 +83,7 @@ class MainFooter extends StatelessWidget {
           _contactItem(Icons.email_outlined, "pusdiklat@bps.go.id"),
 
           const SizedBox(height: 40),
-          Divider(color: Colors.white.withOpacity(0.1)),
+          Divider(color: Colors.white.withValues(alpha: 0.1)),
           const SizedBox(height: 20),
           const Center(
             child: Text(
@@ -100,7 +100,7 @@ class MainFooter extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
       child: Icon(icon, color: Colors.white, size: 20),

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:next/core/widgets/custom_app_bar.dart';
-import 'package:next/core/widgets/main_footer.dart';
 import 'package:next/features/admin/presentation/widgets/admin_sidebar.dart';
+import 'package:next/features/courses/data/services/course_service.dart';
+import 'package:next/features/courses/data/models/top_courses_model.dart';
+import 'package:next/features/courses/data/models/course_category_model.dart';
+import 'package:next/features/courses/data/models/monthly_enrollment_model.dart';
+import 'package:next/features/courses/data/models/total_statistics_model.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -15,9 +18,22 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   bool _isScrolled = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  // Data Services
+  final CourseService _courseService = CourseService();
+
+  // State
+  TopCoursesData? _topCoursesData;
+  CourseCategoryStats? _categoryStats;
+  MonthlyEnrollmentData? _monthlyEnrollmentData;
+  TotalStatistics? _totalStatistics;
+  bool _isLoadingDashboard = true;
+  bool _showTopPopular = true; // Toggle for Top Courses chart
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
+    _fetchDashboardData();
     _scrollController.addListener(() {
       if (_scrollController.offset > 50 && !_isScrolled) {
         setState(() => _isScrolled = true);
@@ -25,6 +41,112 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         setState(() => _isScrolled = false);
       }
     });
+  }
+
+  Future<void> _fetchDashboardData() async {
+    try {
+      final results = await Future.wait([
+        _courseService.getTopCourses().catchError(
+          (e) => TopCoursesResponse(
+            success: false,
+            status: 500,
+            message: e.toString(),
+            data: TopCoursesData(topEnrolledCourses: [], topRatedCourses: []),
+          ),
+        ),
+        _courseService.getCourseCategories().catchError(
+          (e) => CourseCategoryResponse(
+            success: false,
+            status: 500,
+            message: e.toString(),
+            data: CourseCategoryStats(totalCategories: 0, categoryData: []),
+          ),
+        ),
+        _courseService
+            .getMonthlyEnrollments(2026)
+            .catchError(
+              (e) => MonthlyEnrollmentResponse(
+                success: false,
+                status: 500,
+                message: e.toString(),
+                data: MonthlyEnrollmentData(
+                  year: 2026,
+                  totalEnrollments: 0,
+                  monthlyData: [],
+                ),
+              ),
+            ),
+        _courseService.getTotalStatistics().catchError(
+          (e) => TotalStatisticsResponse(
+            success: false,
+            status: 500,
+            message: e.toString(),
+            data: TotalStatistics(
+              totalGroupCourses: 0,
+              totalKnowledgeCenters: 0,
+              totalStudentsEnrolled: 0,
+              totalForums: 0,
+            ),
+          ),
+        ),
+      ]);
+
+      if (!mounted) return;
+
+      setState(() {
+        _errorMessage = null;
+
+        // Top Courses
+        if (results[0] is TopCoursesResponse) {
+          final res = results[0] as TopCoursesResponse;
+          if (res.success) {
+            _topCoursesData = res.data;
+          } else {
+            _errorMessage ??= res.message;
+          }
+        }
+
+        // Categories
+        if (results[1] is CourseCategoryResponse) {
+          final res = results[1] as CourseCategoryResponse;
+          if (res.success) {
+            _categoryStats = res.data;
+          } else {
+            _errorMessage ??= res.message;
+          }
+        }
+
+        // Monthly
+        if (results[2] is MonthlyEnrollmentResponse) {
+          final res = results[2] as MonthlyEnrollmentResponse;
+          if (res.success) {
+            _monthlyEnrollmentData = res.data;
+          } else {
+            _errorMessage ??= res.message;
+          }
+        }
+
+        // Total
+        if (results[3] is TotalStatisticsResponse) {
+          final res = results[3] as TotalStatisticsResponse;
+          if (res.success) {
+            _totalStatistics = res.data;
+          } else {
+            _errorMessage ??= res.message;
+          }
+        }
+
+        _isLoadingDashboard = false;
+      });
+    } catch (e) {
+      debugPrint("Error fetching dashboard data: $e");
+      if (mounted) {
+        setState(() {
+          _isLoadingDashboard = false;
+          _errorMessage = "Exception: $e";
+        });
+      }
+    }
   }
 
   @override
@@ -40,7 +162,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 140),
+                const SizedBox(height: 40),
 
                 // Header with Side Menu Trigger
                 Padding(
@@ -60,7 +182,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                               ),
                             ],
@@ -103,34 +225,38 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 // SUMMARY CARDS (Image 1)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    children: [
-                      _buildSummaryCard(
-                        "Total Kursus",
-                        "39",
-                        Icons.menu_book_outlined,
-                        const Color(0xFFF97316),
-                      ),
-                      _buildSummaryCard(
-                        "Grup Kursus",
-                        "46",
-                        Icons.folder_open_outlined,
-                        const Color(0xFFA855F7),
-                      ),
-                      _buildSummaryCard(
-                        "Knowledge Center",
-                        "28",
-                        Icons.library_books_outlined,
-                        const Color(0xFF22C55E),
-                      ),
-                      _buildSummaryCard(
-                        "Total Forum",
-                        "268",
-                        Icons.chat_bubble_outline,
-                        const Color(0xFFF97316),
-                      ),
-                    ],
-                  ),
+                  child: _isLoadingDashboard
+                      ? const Center(child: CircularProgressIndicator())
+                      : Column(
+                          children: [
+                            _buildSummaryCard(
+                              "Total Kursus",
+                              (_totalStatistics?.totalCourses != 0
+                                  ? "${_totalStatistics?.totalCourses ?? 0}"
+                                  : "${_categoryStats?.categoryData.fold(0, (sum, item) => sum + item.courseCount) ?? 0}"),
+                              Icons.menu_book_outlined,
+                              const Color(0xFFF97316),
+                            ),
+                            _buildSummaryCard(
+                              "Grup Kursus",
+                              "${_totalStatistics?.totalGroupCourses ?? 0}",
+                              Icons.folder_open_outlined,
+                              const Color(0xFFA855F7),
+                            ),
+                            _buildSummaryCard(
+                              "Knowledge Center",
+                              "${_totalStatistics?.totalKnowledgeCenters ?? 0}",
+                              Icons.library_books_outlined,
+                              const Color(0xFF22C55E),
+                            ),
+                            _buildSummaryCard(
+                              "Total Forum",
+                              "${_totalStatistics?.totalForums ?? 0}",
+                              Icons.chat_bubble_outline,
+                              const Color(0xFFF97316),
+                            ),
+                          ],
+                        ),
                 ),
 
                 const SizedBox(height: 16),
@@ -141,106 +267,163 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   subtitle: "Jumlah peserta yang mendaftar kursus setiap bulan",
                   child: SizedBox(
                     height: 200,
-                    child: CustomPaint(
-                      painter: LineChartPainter(),
-                      size: Size.infinite,
-                    ),
+                    child: _isLoadingDashboard
+                        ? const Center(child: CircularProgressIndicator())
+                        : _monthlyEnrollmentData == null
+                        ? Center(
+                            child: Text(
+                              _errorMessage ?? "Data tidak tersedia",
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        : CustomPaint(
+                            painter: LineChartPainter(
+                              monthlyData: _monthlyEnrollmentData!.monthlyData,
+                            ),
+                            size: Size.infinite,
+                          ),
                   ),
                 ),
 
                 // CATEGORY CHART (Image 3)
+                // CATEGORY CHART (Image 3)
                 _buildChartContainer(
                   title: "Kategori Kursus",
                   subtitle: "Distribusi kursus berdasarkan kategori",
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: 200,
-                        child: Stack(
-                          alignment: Alignment.center,
+                  child: _isLoadingDashboard
+                      ? const Center(child: CircularProgressIndicator())
+                      : _categoryStats == null
+                      ? Center(
+                          child: Text(
+                            _errorMessage ?? "Data kategori tidak tersedia",
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : Column(
                           children: [
-                            CustomPaint(
-                              painter: DonutChartPainter(),
-                              size: const Size(180, 180),
-                            ),
-                            const Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  "39",
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
+                            SizedBox(
+                              height: 200,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  CustomPaint(
+                                    painter: DonutChartPainter(
+                                      categories: _categoryStats!.categoryData,
+                                    ),
+                                    size: const Size(180, 180),
                                   ),
-                                ),
-                                Text(
-                                  "Total",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF64748B),
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        "${_categoryStats?.categoryData.fold(0, (sum, item) => sum + item.courseCount) ?? 0}",
+                                        style: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                      ),
+                                      const Text(
+                                        "Total",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
+                            const SizedBox(height: 20),
+                            _buildChartLegend(_categoryStats!.categoryData),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      _buildChartLegend(),
-                    ],
-                  ),
                 ),
 
                 // TOP 5 KURSUS (Image 4)
                 _buildChartContainer(
                   title: "Top 5 Kursus",
                   subtitle: "Kursus paling diminati dan rating terbaik",
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          _buildChartTab("Terpopuler", true),
-                          const SizedBox(width: 8),
-                          _buildChartTab("Rating Tertinggi", false),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      _buildBarItem("Uji Coba LMS-NG I", 0.9),
-                      _buildBarItem("Pelatihan Sensus Ekonomi ...", 0.7),
-                      _buildBarItem("Pelatihan Sensus Ekonomi ...", 0.7),
-                      _buildBarItem("Pelatihan Sensus Ekonomi ...", 0.6),
-                      _buildBarItem("Pelatihan Sensus Ekonomi ...", 0.5),
-                    ],
-                  ),
+                  child: _isLoadingDashboard
+                      ? const Center(child: CircularProgressIndicator())
+                      : _topCoursesData == null
+                      ? Center(
+                          child: Text(
+                            _errorMessage ?? "Data tidak tersedia",
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _showTopPopular = true),
+                                  child: _buildChartTab(
+                                    "Terpopuler",
+                                    _showTopPopular,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _showTopPopular = false),
+                                  child: _buildChartTab(
+                                    "Rating Tertinggi",
+                                    !_showTopPopular,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            ...(_showTopPopular
+                                    ? _topCoursesData!.topEnrolledCourses
+                                    : _topCoursesData!.topRatedCourses)
+                                .take(5)
+                                .map((course) {
+                                  // Normalize data for progress bar
+                                  // For popularity: max enrollment could be dynamic, let's pick largest in list or just normalized
+                                  final maxVal =
+                                      (_showTopPopular
+                                              ? _topCoursesData!
+                                                    .topEnrolledCourses
+                                              : _topCoursesData!
+                                                    .topRatedCourses)
+                                          .map(
+                                            (e) => _showTopPopular
+                                                ? e.enrollmentCount.toDouble()
+                                                : e.rating,
+                                          )
+                                          .reduce((a, b) => a > b ? a : b);
+
+                                  final currentVal = _showTopPopular
+                                      ? course.enrollmentCount.toDouble()
+                                      : course.rating;
+                                  final progress = maxVal == 0
+                                      ? 0.0
+                                      : currentVal / maxVal;
+
+                                  return _buildBarItem(
+                                    course.name,
+                                    progress,
+                                    _showTopPopular
+                                        ? "${course.enrollmentCount} users"
+                                        : "${course.rating} ★",
+                                  );
+                                }),
+                          ],
+                        ),
                 ),
 
                 const SizedBox(height: 40),
-                const MainFooter(),
+                const SizedBox(height: 60),
               ],
             ),
           ),
 
           // Sticky App Bar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              color: _isScrolled ? Colors.white : const Color(0xFFF8FAFC),
-              child: SafeArea(
-                bottom: false,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: _isScrolled
-                        ? Border(bottom: BorderSide(color: Colors.grey[200]!))
-                        : null,
-                  ),
-                  child: const CustomAppBar(),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -365,7 +548,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildBarItem(String title, double progress) {
+  Widget _buildBarItem(String title, double progress, String trailingText) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24.0),
       child: Row(
@@ -376,6 +559,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               title,
               style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
               textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(width: 16),
@@ -397,7 +582,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   ),
                 ),
                 FractionallySizedBox(
-                  widthFactor: progress,
+                  widthFactor: progress.clamp(0.0, 1.0),
                   child: Container(
                     height: 16,
                     decoration: BoxDecoration(
@@ -409,60 +594,75 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ],
             ),
           ),
+          const SizedBox(width: 8),
+          Text(
+            trailingText,
+            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildChartLegend() {
-    final List<Map<String, dynamic>> legends = [
-      {"name": "Diklat Asisten Statistisi", "color": Colors.red},
-      {"name": "Diklat Pranata Komputer Ahli", "color": Colors.orange},
-      {
-        "name": "Diklat Pranata Komputer Terampil",
-        "color": Colors.deepPurpleAccent,
-      },
-      {"name": "Diklat Teknis", "color": Colors.orangeAccent},
-      {"name": "Lainnya", "color": Colors.pinkAccent},
-      {"name": "Pelatihan Kepemimpinan Administrator", "color": Colors.teal},
+  Widget _buildChartLegend(List<CourseCategoryData> data) {
+    // Sort by count desc and take top 5, group rest as "Lainnya" if needed
+    // The requirement says "ambil data", implies listing them.
+    // For the chart legend and aesthetic, let's take top 5 categories by count.
+
+    final sortedData = List<CourseCategoryData>.from(data)
+      ..sort((a, b) => b.courseCount.compareTo(a.courseCount));
+
+    final topCategories = sortedData.take(5).toList();
+    // If there are more, we could conceptually group them, but for the legend let's just show top 5 colors
+
+    final List<Color> colors = [
+      const Color(0xFFF97316),
+      const Color(0xFFEC4899),
+      const Color(0xFF8B5CF6),
+      const Color(0xFFF59E0B),
+      const Color(0xFF10B981),
     ];
 
     return Wrap(
       spacing: 16,
       runSpacing: 8,
       alignment: WrapAlignment.center,
-      children: legends
-          .map(
-            (l) => Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: l['color'],
-                    shape: BoxShape.rectangle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  l['name'],
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
+      children: topCategories.asMap().entries.map((entry) {
+        final index = entry.key;
+        final item = entry.value;
+        final color = colors[index % colors.length];
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.rectangle,
+              ),
             ),
-          )
-          .toList(),
+            const SizedBox(width: 8),
+            Text(
+              item.category,
+              style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+            ),
+          ],
+        );
+      }).toList(),
     );
   }
 }
 
 class LineChartPainter extends CustomPainter {
+  final List<MonthlyData> monthlyData;
+
+  LineChartPainter({required this.monthlyData});
+
   @override
   void paint(Canvas canvas, Size size) {
+    if (monthlyData.isEmpty) return;
+
     final paint = Paint()
       ..color = const Color(0xFFF97316)
       ..strokeWidth = 3
@@ -472,20 +672,56 @@ class LineChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [const Color(0xFFF97316).withOpacity(0.2), Colors.transparent],
+        colors: [
+          const Color(0xFFF97316).withValues(alpha: 0.2),
+          Colors.transparent,
+        ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
+    // Determine max value for Y-axis scaling
+    int maxY = monthlyData
+        .map((e) => e.enrollmentCount)
+        .reduce((a, b) => a > b ? a : b);
+    if (maxY == 0) maxY = 10; // Avoid division by zero, default scale
+
+    // Add some padding to top
+    final double yMaxScale = maxY * 1.2;
+
     final path = Path();
-    path.moveTo(0, size.height * 0.1);
-    path.cubicTo(
-      size.width * 0.05,
-      size.height * 0.1,
-      size.width * 0.1,
-      size.height * 0.8,
-      size.width * 0.2,
-      size.height * 0.85,
-    );
-    path.lineTo(size.width, size.height * 0.9);
+
+    // Draw the line
+    for (int i = 0; i < monthlyData.length; i++) {
+      final x = (size.width / (monthlyData.length - 1)) * i;
+      // Invert Y because canvas 0 is top
+      final y =
+          size.height -
+          ((monthlyData[i].enrollmentCount / yMaxScale) * size.height);
+
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        // Cubic bezier for smooth curve is complex without helper, use lineTo for standard graph or simple smooth
+        // Simple smoothing: control points
+        final prevX = (size.width / (monthlyData.length - 1)) * (i - 1);
+        final prevY =
+            size.height -
+            ((monthlyData[i - 1].enrollmentCount / yMaxScale) * size.height);
+
+        final controlPoint1 = Offset(prevX + (x - prevX) / 2, prevY);
+        final controlPoint2 = Offset(prevX + (x - prevX) / 2, y);
+
+        path.cubicTo(
+          controlPoint1.dx,
+          controlPoint1.dy,
+          controlPoint2.dx,
+          controlPoint2.dy,
+          x,
+          y,
+        );
+
+        // path.lineTo(x, y); // If cubicTo is too weird
+      }
+    }
 
     canvas.drawPath(path, paint);
 
@@ -495,23 +731,83 @@ class LineChartPainter extends CustomPainter {
     fillPath.close();
     canvas.drawPath(fillPath, fillPaint);
 
-    // Draw Grid Lines
+    // Draw Grid Lines & Labels
     final gridPaint = Paint()
       ..color = Colors.grey[200]!
       ..strokeWidth = 1;
+
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+
+    // X-Axis Labels (Months)
+    // We have 12 months. Draw roughly.
+    final List<String> shortMonths = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "Mei",
+      "Jun",
+      "Jul",
+      "Ags",
+      "Sep",
+      "Okt",
+      "Nov",
+      "Des",
+    ];
+
+    for (int i = 0; i < monthlyData.length; i++) {
+      final x = (size.width / (monthlyData.length - 1)) * i;
+
+      // Only draw some labels to avoid crowding? Or all 12 if space permits.
+      // Let's try drawing selected ones like the image: Jan, Feb, Mar, Apr, Mei, Jun, Jul, Sep, Okt, Des
+      // Image skips Aug, Nov?
+      // Let's draw all but with small font.
+
+      if (i < shortMonths.length) {
+        textPainter.text = TextSpan(
+          text: shortMonths[i],
+          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+        );
+        textPainter.layout();
+        textPainter.paint(
+          canvas,
+          Offset(x - textPainter.width / 2, size.height + 5),
+        );
+      }
+    }
+
+    // Y-Axis Grid & Labels (0, 30, 60, 90, 120 e.g.)
+    // Let's draw 5 lines
     for (int i = 0; i < 5; i++) {
-      double y = size.height * (i / 4);
+      double y =
+          size.height -
+          (size.height * (i / 4)); // 0%, 25%, 50%, 75%, 100% of height
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+
+      // Label value
+      int value = ((yMaxScale * (i / 4))).round();
+      textPainter.text = TextSpan(
+        text: value.toString(),
+        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+      );
+      textPainter.layout();
+      textPainter.paint(canvas, Offset(-25, y - 6));
     }
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant LineChartPainter oldDelegate) => true;
 }
 
 class DonutChartPainter extends CustomPainter {
+  final List<CourseCategoryData> categories;
+
+  DonutChartPainter({required this.categories});
+
   @override
   void paint(Canvas canvas, Size size) {
+    if (categories.isEmpty) return;
+
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
     const strokeWidth = 30.0;
@@ -522,17 +818,35 @@ class DonutChartPainter extends CustomPainter {
 
     double startAngle = -1.57; // -90 degrees in radians
 
-    final List<Map<String, dynamic>> segments = [
-      {"color": const Color(0xFFF97316), "value": 0.25},
-      {"color": const Color(0xFFEC4899), "value": 0.25},
-      {"color": const Color(0xFF8B5CF6), "value": 0.1},
-      {"color": const Color(0xFFF59E0B), "value": 0.1},
-      {"color": const Color(0xFF10B981), "value": 0.3},
+    final sortedData = List<CourseCategoryData>.from(categories)
+      ..sort((a, b) => b.courseCount.compareTo(a.courseCount));
+
+    final topCategories = sortedData.take(5).toList();
+    final totalCount = sortedData.fold(
+      0,
+      (sum, item) => sum + item.courseCount,
+    );
+
+    final List<Color> colors = [
+      const Color(0xFFF97316),
+      const Color(0xFFEC4899),
+      const Color(0xFF8B5CF6),
+      const Color(0xFFF59E0B),
+      const Color(0xFF10B981),
     ];
 
-    for (var segment in segments) {
-      paint.color = segment['color'];
-      final sweepAngle = 2 * 3.14159 * segment['value'];
+    // Calculate total of top 5 to see if we need 'Others' segment logic or just paint proportional to total
+    // The requirement implies visualizing the distribution. Let's paint top 5 specifically.
+
+    for (int i = 0; i < topCategories.length; i++) {
+      final item = topCategories[i];
+      final color = colors[i % colors.length];
+
+      paint.color = color;
+
+      // Calculate sweep based on its share of TOTAL count, not just top 5 sum
+      final sweepAngle = 2 * 3.14159 * (item.courseCount / totalCount);
+
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
         startAngle,
@@ -542,10 +856,14 @@ class DonutChartPainter extends CustomPainter {
       );
       startAngle += sweepAngle;
     }
+
+    // Optionally paint "Others" in grey if there's remainder?
+    // The prompt just said "ambil data", implies mirroring the original logic but with dynamic data.
+    // The provided image shows a colorful ring. I'll stick to Top 5 for now.
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant DonutChartPainter oldDelegate) => true; // Repaint if data changes
 }
 
 class CommonText extends StatelessWidget {

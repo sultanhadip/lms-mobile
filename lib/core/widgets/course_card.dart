@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:next/core/theme/app_colors.dart';
-import 'package:next/features/courses/presentation/pages/course_detail_page.dart';
 
 class CourseCard extends StatelessWidget {
   final String title;
@@ -11,6 +10,8 @@ class CourseCard extends StatelessWidget {
   final String instructor;
   final double? width;
 
+  final VoidCallback? onTap;
+
   const CourseCard({
     super.key,
     required this.title,
@@ -20,27 +21,13 @@ class CourseCard extends StatelessWidget {
     this.width,
     this.studentCount = 0,
     this.instructor = "-",
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CourseDetailPage(
-              course: {
-                "title": title,
-                "category": category,
-                "image": imageUrl,
-                "instructor": instructor,
-                "students": studentCount.toString(),
-              },
-            ),
-          ),
-        );
-      },
+      onTap: onTap,
       child: Container(
         width: width ?? 280,
         margin: const EdgeInsets.only(bottom: 24),
@@ -49,7 +36,7 @@ class CourseCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -57,6 +44,7 @@ class CourseCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // Allow it to shrink
           children: [
             // Banner Image
             ClipRRect(
@@ -67,17 +55,17 @@ class CourseCard extends StatelessWidget {
                 imageUrl.isNotEmpty
                     ? imageUrl
                     : "https://pusdiklat.bps.go.id/media/images/webinar/banner_webinar_1684742400.jpg",
-                height: 200,
+                height: 140, // Reduced from 200
                 width: double.infinity,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
-                  height: 200,
+                  height: 140,
                   color: const Color(0xFFF1F5F9),
                   child: Center(
                     child: Icon(
                       Icons.school_outlined,
-                      size: 64,
-                      color: AppColors.primaryOrange.withOpacity(0.5),
+                      size: 48,
+                      color: AppColors.primaryOrange.withValues(alpha: 0.5),
                     ),
                   ),
                 ),
@@ -85,7 +73,7 @@ class CourseCard extends StatelessWidget {
             ),
 
             Padding(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.all(16.0), // Reduced from 20
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -93,10 +81,10 @@ class CourseCard extends StatelessWidget {
                   if (category.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                        horizontal: 8,
+                        vertical: 4,
                       ),
-                      margin: const EdgeInsets.only(bottom: 16),
+                      margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(20),
@@ -108,6 +96,8 @@ class CourseCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF64748B),
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
 
@@ -115,7 +105,7 @@ class CourseCard extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 16, // Reduced from 18
                       fontWeight: FontWeight.w900,
                       color: Color(0xFF1E293B),
                       height: 1.3,
@@ -123,8 +113,7 @@ class CourseCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 16),
-
+                  const SizedBox(height: 12), // Reduced from 16
                   // Rating Section
                   Row(
                     children: [
@@ -132,7 +121,7 @@ class CourseCard extends StatelessWidget {
                         5,
                         (index) => const Icon(
                           Icons.star_border,
-                          size: 18,
+                          size: 16,
                           color: Color(0xFFE2E8F0),
                         ),
                       ),
@@ -141,48 +130,53 @@ class CourseCard extends StatelessWidget {
                         "(${rating.toInt()})",
                         style: const TextStyle(
                           color: Color(0xFF64748B),
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-
-                  // Instructor
-                  Row(
+                  const SizedBox(height: 12), // Reduced from 16
+                  // Info Row (Instructor & Student)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.school_outlined,
-                        size: 20,
-                        color: Color(0xFF64748B),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.school_outlined,
+                            size: 16, // Reduced size
+                            color: Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              instructor,
+                              style: const TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        instructor,
-                        style: const TextStyle(
-                          color: Color(0xFF64748B),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Student Count
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.people_outline,
-                        size: 20,
-                        color: Color(0xFF64748B),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        "$studentCount students",
-                        style: const TextStyle(
-                          color: Color(0xFF64748B),
-                          fontSize: 14,
-                        ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.people_outline,
+                            size: 16,
+                            color: Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            "$studentCount students",
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

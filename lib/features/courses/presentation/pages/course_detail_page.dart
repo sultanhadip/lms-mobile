@@ -3,9 +3,15 @@ import 'package:next/core/theme/app_colors.dart';
 import 'package:next/core/widgets/custom_app_bar.dart';
 import 'package:next/core/widgets/main_footer.dart';
 import 'package:next/core/widgets/app_menu.dart';
+import 'package:next/features/courses/data/models/course_model.dart';
+import 'package:next/features/courses/data/models/course_content_model.dart';
+import 'package:next/features/courses/data/services/course_service.dart';
+import 'package:next/features/home/presentation/pages/home_page.dart';
+import 'package:next/features/courses/presentation/pages/courses_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CourseDetailPage extends StatefulWidget {
-  final Map<String, dynamic> course;
+  final CourseModel course;
 
   const CourseDetailPage({super.key, required this.course});
 
@@ -15,8 +21,14 @@ class CourseDetailPage extends StatefulWidget {
 
 class _CourseDetailPageState extends State<CourseDetailPage> {
   final ScrollController _scrollController = ScrollController();
+  final CourseService _courseService = CourseService();
   bool _isScrolled = false;
   String _activeTab = "Informasi";
+
+  // Content Data
+  List<SectionModel>? _sections;
+  bool _isLoadingContent = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -28,6 +40,39 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
         setState(() => _isScrolled = false);
       }
     });
+
+    // Fetch contents initially
+    _fetchCourseContents();
+  }
+
+  Future<void> _fetchCourseContents() async {
+    setState(() {
+      _isLoadingContent = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await _courseService.getCourseContents(widget.course.id);
+      if (response.success) {
+        setState(() {
+          _sections = response.listSection;
+        });
+      } else {
+        setState(() {
+          _errorMessage = response.message;
+        });
+      }
+    } catch (e) {
+      // For demo purposes, we might want to fail gracefully or show a message
+      debugPrint("Error fetching contents: $e");
+      setState(() {
+        _errorMessage = "Gagal memuat konten kursus.";
+      });
+    } finally {
+      setState(() {
+        _isLoadingContent = false;
+      });
+    }
   }
 
   @override
@@ -57,13 +102,34 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                   ),
                   child: Row(
                     children: [
-                      _buildBreadcrumbItem("Beranda"),
+                      _buildBreadcrumbItem(
+                        "Beranda",
+                        onTap: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HomePage(),
+                            ),
+                            (route) => false,
+                          );
+                        },
+                      ),
                       _buildBreadcrumbSeparator(),
-                      _buildBreadcrumbItem("Kursus"),
+                      _buildBreadcrumbItem(
+                        "Kursus",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CoursesPage(),
+                            ),
+                          );
+                        },
+                      ),
                       _buildBreadcrumbSeparator(),
                       Expanded(
                         child: Text(
-                          widget.course['title'] ?? "Detail Kursus",
+                          widget.course.name,
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -86,17 +152,19 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
-                        image: widget.course['image'] != ""
+                        image: widget.course.groupCourse.thumbnail.isNotEmpty
                             ? DecorationImage(
-                                image: NetworkImage(widget.course['image']),
+                                image: NetworkImage(
+                                  widget.course.groupCourse.thumbnail,
+                                ),
                                 fit: BoxFit.cover,
                               )
                             : null,
                       ),
-                      child: widget.course['image'] == ""
+                      child: widget.course.groupCourse.thumbnail.isEmpty
                           ? const Center(
                               child: Icon(
-                                Icons.people,
+                                Icons.image_not_supported,
                                 size: 80,
                                 color: Colors.grey,
                               ),
@@ -118,7 +186,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -138,7 +206,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            widget.course['category'] ?? "General",
+                            widget.course.groupCourse.description.category,
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -154,8 +222,9 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                           iconColor: Colors.orange,
                           bgColor: const Color(0xFFFFF7ED),
                           borderColor: const Color(0xFFFFEDD5),
-                          title: "0 / 5.0",
-                          subtitle: "Berdasarkan 0 ulasan",
+                          title: "${widget.course.rating} / 5.0",
+                          subtitle:
+                              "Berdasarkan ${widget.course.totalUserRating} ulasan",
                         ),
                         const SizedBox(height: 12),
 
@@ -166,7 +235,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                           bgColor: const Color(0xFFF8FAFC),
                           borderColor: const Color(0xFFF1F5F9),
                           title: "Siswa Terdaftar",
-                          subtitle: "0",
+                          subtitle: "${widget.course.activityCount}",
                         ),
                         const SizedBox(height: 24),
 
@@ -215,7 +284,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          widget.course['title'] ?? "Detail Kursus",
+                          widget.course.name,
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -307,10 +376,19 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     );
   }
 
-  Widget _buildBreadcrumbItem(String label) {
-    return Text(
-      label,
-      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+  Widget _buildBreadcrumbItem(String label, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          color: onTap != null
+              ? const Color(0xFF64748B)
+              : const Color(0xFF94A3B8),
+          fontWeight: onTap != null ? FontWeight.w600 : FontWeight.normal,
+        ),
+      ),
     );
   }
 
@@ -347,7 +425,10 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
-                BoxShadow(color: iconColor.withOpacity(0.1), blurRadius: 10),
+                BoxShadow(
+                  color: iconColor.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                ),
               ],
             ),
             child: Icon(icon, color: iconColor, size: 24),
@@ -395,7 +476,9 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
         _buildInfoTile(
           Icons.menu_book_rounded,
           "METODE",
-          "luring",
+          widget.course.groupCourse.description.method.isNotEmpty
+              ? "${widget.course.groupCourse.description.method[0].toUpperCase()}${widget.course.groupCourse.description.method.substring(1)}"
+              : "-",
           const Color(0xFFF97316),
         ),
         _buildInfoTile(
@@ -404,17 +487,28 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
           "Download Silabus",
           const Color(0xFFF97316),
           hasDownload: true,
+          onTap: () async {
+            final url = widget.course.groupCourse.description.silabus;
+            if (url.isNotEmpty) {
+              final uri = Uri.parse(url);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri);
+              } else {
+                debugPrint("Could not launch $url");
+              }
+            }
+          },
         ),
         _buildInfoTile(
           Icons.access_time_rounded,
           "TOTAL JAM PELAJARAN",
-          "20 JP",
+          "${widget.course.groupCourse.description.totalJp} JP",
           const Color(0xFFA855F7),
         ),
         _buildInfoTile(
           Icons.description_outlined,
           "KURIKULUM",
-          "New Sensus Ekonomi 2026",
+          widget.course.groupCourse.description.curriculum,
           const Color(0xFFEC4899),
         ),
 
@@ -445,9 +539,9 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                 ],
               ),
               const SizedBox(height: 20),
-              const Text(
-                "Pelatihan Innas Sensus Ekonomi 2026 adalah Pelatihan Subject Matter Survey Sensus yang diselenggarakan oleh Pusat Pendidikan dan Pelatihan secara luring mulai dari tanggal 03 Februari 2026 sampai dengan 10 Februari 2026 dengan jumlah jam pelatihan sebanyak 20",
-                style: TextStyle(
+              Text(
+                widget.course.groupCourse.description.description,
+                style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF64748B),
                   height: 1.6,
@@ -466,69 +560,102 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     String value,
     Color color, {
     bool hasDownload = false,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(12),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF1F5F9)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: Colors.white, size: 24),
             ),
-            child: Icon(icon, color: Colors.white, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF94A3B8),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      value,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: hasDownload ? color : const Color(0xFF1E293B),
-                      ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF94A3B8),
+                      letterSpacing: 0.5,
                     ),
-                    if (hasDownload) ...[
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.file_download_outlined,
-                        color: color,
-                        size: 18,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          value,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: hasDownload
+                                ? color
+                                : const Color(0xFF1E293B),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
+                      if (hasDownload) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.file_download_outlined,
+                          color: color,
+                          size: 18,
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildKontenTab() {
+    if (_isLoadingContent) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(_errorMessage!, style: const TextStyle(color: Colors.grey)),
+            TextButton(
+              onPressed: _fetchCourseContents,
+              child: const Text("Coba Lagi"),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_sections == null || _sections!.isEmpty) {
+      return const Center(child: Text("Belum ada konten kursus."));
+    }
+
     return Column(
       children: [
         // Content Header
@@ -539,14 +666,14 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFF1F5F9)),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.menu_book_rounded, color: Color(0xFFC2410C)),
-              SizedBox(width: 12),
+              const Icon(Icons.menu_book_rounded, color: Color(0xFFC2410C)),
+              const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     "Kurikulum Kursus",
                     style: TextStyle(
                       fontSize: 16,
@@ -554,10 +681,13 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                       color: Color(0xFF1E293B),
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    "5 bagian",
-                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    "${_sections!.length} bagian",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
                 ],
               ),
@@ -566,33 +696,22 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
         ),
         const SizedBox(height: 24),
 
-        // Section 1
-        _buildCourseSection(
-          "1",
-          "Pedoman Pelatihan Innas SE2026",
-          "Seluruh buku pedoman dalam Sensus Ekonomi 2026 dapat dilihat pada section ini",
-          [
-            "Buku 1 Pedoman Teknis SE2026",
-            "Buku 2 Pedoman Innas Inda SE2026",
-            "Buku 3 Pedoman Koseka SE2026",
-            "Buku 4 Pedoman Pemeriksaan SE2026",
-            "Buku 5 Pedoman Pendataan SE2026",
-            "Buku 7 Kasus Batas SE2026",
-            "Buku 6 Pedoman Pengisian Kuesion...",
-          ],
-          isExpanded: true,
-        ),
+        ..._sections!.map((section) {
+          // Sort contents by sequence ASC
+          final sortedContents = List<ContentModel>.from(section.listContent)
+            ..sort((a, b) => a.sequence.compareTo(b.sequence));
 
-        const SizedBox(height: 12),
-
-        // Section 2
-        _buildCourseSection(
-          "2",
-          "Pembahasan 1",
-          "Section ini berisi materi yang digunakan pada pelatihan Innas SE 2026 hari pertama",
-          [],
-          isExpanded: false,
-        ),
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: _buildCourseSection(
+              section.sequence.toString(),
+              section.name,
+              section.description,
+              sortedContents,
+              isExpanded: section.sequence == 1, // Expand first item by default
+            ),
+          );
+        }),
       ],
     );
   }
@@ -601,7 +720,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     String number,
     String title,
     String subtitle,
-    List<String> items, {
+    List<ContentModel> items, {
     bool isExpanded = false,
   }) {
     return Container(
@@ -681,7 +800,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     );
   }
 
-  Widget _buildSectionItem(String title) {
+  Widget _buildSectionItem(ContentModel content) {
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -692,11 +811,17 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.lock_outline, color: Color(0xFFCBD5E1), size: 18),
+          Icon(
+            content.type == 'PDF'
+                ? Icons.picture_as_pdf_outlined
+                : Icons.lock_outline,
+            color: const Color(0xFFCBD5E1),
+            size: 18,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              title,
+              content.name,
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
               overflow: TextOverflow.ellipsis,
             ),
@@ -717,7 +842,10 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: const Color(0xFFF1F5F9)),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 20,
+              ),
             ],
           ),
           child: Column(
@@ -757,16 +885,16 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                   border: Border.all(color: const Color(0xFFF1F5F9)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
                   ],
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
-                    "0.0",
-                    style: TextStyle(
+                    widget.course.rating.toStringAsFixed(1),
+                    style: const TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.w900,
                       color: Color(0xFF1E293B),
@@ -779,9 +907,13 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
                   5,
-                  (index) => const Icon(
-                    Icons.star_border,
-                    color: Color(0xFFCBD5E1),
+                  (index) => Icon(
+                    index < widget.course.rating
+                        ? Icons.star
+                        : Icons.star_border,
+                    color: index < widget.course.rating
+                        ? Colors.orange
+                        : const Color(0xFFCBD5E1),
                     size: 24,
                   ),
                 ),
@@ -791,115 +923,15 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                 "Rating Kursus",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
-              const Text(
-                "(0 ratings)",
-                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+              Text(
+                "(${widget.course.totalUserRating} ratings)",
+                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
               ),
               const SizedBox(height: 32),
-
-              // Rating Bars
-              _buildRatingBar(5, 0),
-              _buildRatingBar(4, 0),
-              _buildRatingBar(3, 0),
-              _buildRatingBar(2, 0),
-              _buildRatingBar(1, 0),
             ],
           ),
         ),
-
-        const SizedBox(height: 24),
-
-        // Filters
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: const TextField(
-            decoration: InputDecoration(
-              hintText: "Cari ulasan...",
-              prefixIcon: Icon(Icons.search, color: Color(0xFF94A3B8)),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 14),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: "Semua Bintang",
-              isExpanded: true,
-              icon: const Icon(
-                Icons.keyboard_arrow_down,
-                color: Color(0xFF64748B),
-              ),
-              items:
-                  [
-                    "Semua Bintang",
-                    "5 Bintang",
-                    "4 Bintang",
-                    "3 Bintang",
-                    "2 Bintang",
-                    "1 Bintang",
-                  ].map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value, style: const TextStyle(fontSize: 14)),
-                    );
-                  }).toList(),
-              onChanged: (_) {},
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 48),
-        const Text(
-          "No reviews yet",
-          style: TextStyle(
-            color: Color(0xFF94A3B8),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
       ],
-    );
-  }
-
-  Widget _buildRatingBar(int stars, int count) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        children: [
-          Icon(Icons.star, color: Colors.grey[300], size: 16),
-          const SizedBox(width: 8),
-          Text(
-            stars.toString(),
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Container(
-              height: 6,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            count.toString(),
-            style: const TextStyle(color: Color(0xFF94A3B8)),
-          ),
-        ],
-      ),
     );
   }
 }

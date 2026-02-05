@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:next/core/theme/app_colors.dart';
-import 'package:next/core/widgets/custom_app_bar.dart';
-import 'package:next/core/widgets/main_footer.dart';
 import 'package:next/features/admin/presentation/widgets/admin_sidebar.dart';
+import 'package:next/features/courses/data/services/course_service.dart';
+import 'package:next/features/courses/data/models/knowledge_status_stats_model.dart';
 
 class KnowledgeListPage extends StatefulWidget {
   const KnowledgeListPage({super.key});
@@ -15,6 +15,9 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final CourseService _courseService = CourseService();
+  KnowledgeStatusStats? _stats;
+  bool _isLoadingStats = true;
 
   @override
   void initState() {
@@ -26,6 +29,24 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
         setState(() => _isScrolled = false);
       }
     });
+    _fetchStats();
+  }
+
+  Future<void> _fetchStats() async {
+    try {
+      final response = await _courseService.getKnowledgeStatusStats();
+      if (response.success && mounted) {
+        setState(() {
+          _stats = response.data;
+          _isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching stats: $e");
+      if (mounted) {
+        setState(() => _isLoadingStats = false);
+      }
+    }
   }
 
   @override
@@ -41,7 +62,7 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 140),
+                const SizedBox(height: 40),
 
                 // Header
                 Padding(
@@ -61,7 +82,7 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                               ),
                             ],
@@ -122,7 +143,9 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
                           Expanded(
                             child: _buildSummaryCard(
                               "Menunggu Review",
-                              "3",
+                              _isLoadingStats
+                                  ? "..."
+                                  : "${_stats?.pendingCount ?? 0}",
                               Colors.orange,
                               hasDot: true,
                             ),
@@ -131,7 +154,9 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
                           Expanded(
                             child: _buildSummaryCard(
                               "Disetujui",
-                              "8",
+                              _isLoadingStats
+                                  ? "..."
+                                  : "${_stats?.approvedCount ?? 0}",
                               Colors.green,
                             ),
                           ),
@@ -143,7 +168,9 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
                           Expanded(
                             child: _buildSummaryCard(
                               "Ditolak",
-                              "1",
+                              _isLoadingStats
+                                  ? "..."
+                                  : "${_stats?.rejectedCount ?? 0}",
                               Colors.red,
                             ),
                           ),
@@ -151,7 +178,9 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
                           Expanded(
                             child: _buildSummaryCard(
                               "Diturunkan",
-                              "1",
+                              _isLoadingStats
+                                  ? "..."
+                                  : "${_stats?.hiddenCount ?? 0}",
                               const Color(0xFF64748B),
                               hasIcon: true,
                             ),
@@ -172,23 +201,29 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
                     children: [
                       _buildTabItem(
                         "Semua",
-                        "12",
+                        _isLoadingStats ? "..." : "${_stats?.total ?? 0}",
                         isActive: true,
                         icon: Icons.visibility_outlined,
                       ),
                       _buildTabItem(
                         "Menunggu Review",
-                        "3",
+                        _isLoadingStats
+                            ? "..."
+                            : "${_stats?.pendingCount ?? 0}",
                         icon: Icons.access_time_outlined,
                       ),
                       _buildTabItem(
                         "Disetujui",
-                        "8",
+                        _isLoadingStats
+                            ? "..."
+                            : "${_stats?.approvedCount ?? 0}",
                         icon: Icons.check_circle_outline,
                       ),
                       _buildTabItem(
                         "Ditolak",
-                        "1",
+                        _isLoadingStats
+                            ? "..."
+                            : "${_stats?.rejectedCount ?? 0}",
                         icon: Icons.cancel_outlined,
                       ),
                     ],
@@ -263,31 +298,12 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
                 _buildPaginationFooter(),
 
                 const SizedBox(height: 40),
-                const MainFooter(),
+                const SizedBox(height: 60),
               ],
             ),
           ),
 
           // Sticky App Bar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              color: _isScrolled ? Colors.white : const Color(0xFFF8FAFC),
-              child: SafeArea(
-                bottom: false,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: _isScrolled
-                        ? Border(bottom: BorderSide(color: Colors.grey[200]!))
-                        : null,
-                  ),
-                  child: const CustomAppBar(),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -333,7 +349,7 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
         border: Border.all(color: Colors.grey[100]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -361,7 +377,7 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
                 Icon(
                   Icons.info_outline,
                   size: 14,
-                  color: color.withOpacity(0.5),
+                  color: color.withValues(alpha: 0.5),
                 ),
               ],
             ],
@@ -502,7 +518,7 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -533,7 +549,7 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Row(
@@ -565,9 +581,11 @@ class _KnowledgeListPageState extends State<KnowledgeListPage> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: statusColor.withOpacity(0.2)),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

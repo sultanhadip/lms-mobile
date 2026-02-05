@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:next/core/widgets/custom_app_bar.dart';
-import 'package:next/core/widgets/main_footer.dart';
 import '../widgets/admin_sidebar.dart';
 
 class KnowledgeAnalysisPage extends StatefulWidget {
@@ -40,7 +38,7 @@ class _KnowledgeAnalysisPageState extends State<KnowledgeAnalysisPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 140),
+                const SizedBox(height: 40),
 
                 // Header
                 Padding(
@@ -60,7 +58,7 @@ class _KnowledgeAnalysisPageState extends State<KnowledgeAnalysisPage> {
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                               ),
                             ],
@@ -273,31 +271,12 @@ class _KnowledgeAnalysisPageState extends State<KnowledgeAnalysisPage> {
                 ),
 
                 const SizedBox(height: 40),
-                const MainFooter(),
+                const SizedBox(height: 60),
               ],
             ),
           ),
 
           // Sticky App Bar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              color: _isScrolled ? Colors.white : const Color(0xFFF8FAFC),
-              child: SafeArea(
-                bottom: false,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: _isScrolled
-                        ? Border(bottom: BorderSide(color: Colors.grey[200]!))
-                        : null,
-                  ),
-                  child: const CustomAppBar(),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -394,7 +373,7 @@ class _KnowledgeAnalysisPageState extends State<KnowledgeAnalysisPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(Icons.insert_drive_file, size: 16, color: iconColor),
@@ -439,10 +418,12 @@ class _KnowledgeAnalysisPageState extends State<KnowledgeAnalysisPage> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: (tag['color'] as Color).withOpacity(0.1),
+                          color: (tag['color'] as Color).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: (tag['color'] as Color).withOpacity(0.2),
+                            color: (tag['color'] as Color).withValues(
+                              alpha: 0.2,
+                            ),
                           ),
                         ),
                         child: Text(

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:next/core/widgets/custom_app_bar.dart';
-import 'package:next/core/widgets/main_footer.dart';
 import 'package:next/features/admin/presentation/widgets/admin_sidebar.dart';
 
 class ManageCoursePage extends StatefulWidget {
@@ -54,7 +52,7 @@ class _ManageCoursePageState extends State<ManageCoursePage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 140),
+                const SizedBox(height: 40),
 
                 // Breadcrumbs
                 Padding(
@@ -204,31 +202,12 @@ class _ManageCoursePageState extends State<ManageCoursePage>
                 ),
 
                 const SizedBox(height: 40),
-                const MainFooter(),
+                const SizedBox(height: 60),
               ],
             ),
           ),
 
           // Sticky App Bar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              color: _isScrolled ? Colors.white : const Color(0xFFF8FAFC),
-              child: SafeArea(
-                bottom: false,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: _isScrolled
-                        ? Border(bottom: BorderSide(color: Colors.grey[200]!))
-                        : null,
-                  ),
-                  child: const CustomAppBar(),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -568,7 +547,7 @@ class _ManageCoursePageState extends State<ManageCoursePage>
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFFF0FDF4).withOpacity(0.5),
+            color: const Color(0xFFF0FDF4).withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFDCFCE7)),
           ),
@@ -906,7 +885,7 @@ class _ManageCoursePageState extends State<ManageCoursePage>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 20),

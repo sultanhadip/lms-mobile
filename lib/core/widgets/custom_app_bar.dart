@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:next/features/admin/presentation/pages/admin_dashboard_page.dart';
+
 import 'package:next/features/home/presentation/pages/home_page.dart';
 
 class CustomAppBar extends StatelessWidget {
@@ -35,7 +35,7 @@ class CustomAppBar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFF97316).withOpacity(0.3),
+                        color: const Color(0xFFF97316).withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -61,7 +61,7 @@ class CustomAppBar extends StatelessWidget {
                       ),
                     ),
                     const Text(
-                      "MARKOP BPS",
+                      "WARKOP BPS",
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
@@ -77,25 +77,6 @@ class CustomAppBar extends StatelessWidget {
           // Right Side: Admin Link and Menu
           Row(
             children: [
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AdminDashboardPage(),
-                    ),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFF97316),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                ),
-                child: const Text(
-                  "Admin",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(width: 8),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -103,7 +84,7 @@ class CustomAppBar extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFF1F5F9)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),

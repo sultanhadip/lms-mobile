@@ -176,7 +176,7 @@ class _MyCoursesPageState extends State<MyCoursesPage> {
                       if (_myCourses.isNotEmpty) ...[
                         Center(
                           child: Text(
-                            "Menampilkan ${startIndex + 1}-${endIndex} dari ${_myCourses.length} kursus",
+                            "Menampilkan ${startIndex + 1}-$endIndex dari ${_myCourses.length} kursus",
                             style: const TextStyle(
                               color: Colors.grey,
                               fontSize: 13,

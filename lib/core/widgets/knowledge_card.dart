@@ -17,7 +17,7 @@ class KnowledgeCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -34,7 +34,8 @@ class KnowledgeCard extends StatelessWidget {
                     top: Radius.circular(16),
                   ),
                   child: Image.network(
-                    "https://pusdiklat.bps.go.id/media/images/webinar/banner_webinar_1684742400.jpg",
+                    item['image'] ??
+                        "https://pusdiklat.bps.go.id/media/images/webinar/banner_webinar_1684742400.jpg",
                     height: 200,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -51,7 +52,7 @@ class KnowledgeCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Webinar Badge (Top Left)
+                // Type Badge (Top Left)
                 Positioned(
                   top: 12,
                   left: 12,
@@ -61,23 +62,36 @@ class KnowledgeCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3E8FF),
+                      color: (item['type'] == 'webinar')
+                          ? const Color(0xFFF3E8FF)
+                          : const Color(0xFFDBEAFE),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
-                      children: const [
+                      children: [
                         Icon(
-                          Icons.calendar_today_outlined,
+                          (item['type'] == 'webinar')
+                              ? Icons.calendar_today_outlined
+                              : Icons.article_outlined,
                           size: 14,
-                          color: Color(0xFFA855F7),
+                          color: (item['type'] == 'webinar')
+                              ? const Color(0xFFA855F7)
+                              : const Color(0xFF3B82F6),
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Text(
-                          "Webinar",
+                          (item['contentType'] ?? item['type'] ?? "Content")
+                              .toString()
+                              .replaceFirstMapped(
+                                RegExp(r'^\w'),
+                                (match) => match.group(0)!.toUpperCase(),
+                              ),
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFFA855F7),
+                            color: (item['type'] == 'webinar')
+                                ? const Color(0xFFA855F7)
+                                : const Color(0xFF3B82F6),
                           ),
                         ),
                       ],
@@ -99,7 +113,7 @@ class KnowledgeCard extends StatelessWidget {
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Text(
-                      item['category'] ?? "Akuntansi",
+                      item['category'] ?? "General",
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,

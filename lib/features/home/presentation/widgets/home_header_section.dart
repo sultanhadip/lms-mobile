@@ -12,7 +12,7 @@ class HomeHeaderSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
 
-    return Container(
+    return SizedBox(
       height: screenHeight,
       child: Stack(
         children: [
@@ -25,7 +25,7 @@ class HomeHeaderSection extends StatelessWidget {
                 color: Colors.orange[200],
                 colorBlendMode: BlendMode.srcIn,
                 repeat: ImageRepeat.repeat,
-                errorBuilder: (_, __, ___) => const DecoratedBox(
+                errorBuilder: (_, _, _) => const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -43,7 +43,7 @@ class HomeHeaderSection extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: 140), // Spacing for Navbar
+              const SizedBox(height: 140), // Spacing for Navbar
               HeroSection(),
               SearchBarWidget(),
               CategoryFilter(),
@@ -61,7 +61,7 @@ class GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.orange.withOpacity(0.1)
+      ..color = Colors.orange.withValues(alpha: 0.1)
       ..strokeWidth = 1;
 
     const double step = 40;
